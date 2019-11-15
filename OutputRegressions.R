@@ -1,3 +1,6 @@
+#code used to determine income quintiles by city to generate a HA statistic 
+
+#packages used
 library(stargazer)
 library(sas7bdat)
 library(corrplot)
@@ -6,14 +9,17 @@ library(rcompanion)
 library(ggplot2)
 library(bayesAB)
 
-setwd("Y:/Dan/HousingPaper/Code/ACSDataRuns/")
+setwd("file/location")
 
 ACS12_16 <- read.sas7bdat("R2016.sas7bdat")
 ACS06_10 <- read.sas7bdat("R2006.sas7bdat")
 
-setwd("Y:/Dan/HousingPaper/Code/DataSets/OrganizedFindings/")
-
 #Testing against minutes to the CBD
+
+#OLS Regression, test income against a log of how many minutes it takes to drive to the Central business district, MBY, MRN, 
+#log number of people who have a degree after a bachelors, log number of people who drive to work
+
+#also do the same with Income, Rent, Value
 
 ACS06_10_ATLIncome <- lm(logIncome ~ LogBGMinutes+MedianBuildYear+MedianRoomNumber+ 
              PostBachelors+CarToWork, data = subset(ACS06_10,cityplus==1))
@@ -195,6 +201,7 @@ ACS12_16_HOUValue <- lm(logValue ~ LogBGMinutes+MedianBuildYear+MedianRoomNumber
 ACS12_16_LAValue <- lm(logValue ~ LogBGMinutes+MedianBuildYear+MedianRoomNumber+ 
                          PostBachelors+CarToWork, data = subset(ACS12_16,cityplus==7))
 
+#organizes regressions results
 
 stargazer(ACS06_10_BOSValue, ACS06_10_CHIValue, ACS06_10_NYCValue, 
           ACS06_10_PHLValue, ACS06_10_ATLValue, ACS06_10_DCValue, 
