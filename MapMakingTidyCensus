@@ -1,0 +1,143 @@
+library(acs)
+library(tidycensus)
+library(purrr)
+library(dplyr)
+library(tigris)
+library(maptools)
+library(rgeos)
+library(ggplot2)
+library(ggfortify)
+
+api.key.install(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", file = "dan.rda")
+
+census_api_key(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", install = TRUE, overwrite = TRUE)
+
+geo.lookup(state="NY", county = "*", block.group = "*")
+
+household_income <- c("B19001_001","B19001_002","B19001_003","B19001_004","B19001_005","B19001_006"
+                      ,"B19001_007","B19001_008","B19001_009","B19001_010","B19001_011","B19001_012"
+                      ,"B19001_013","B19001_014","B19001_015","B19001_016","B19001_017")
+
+Nycounties <- c("Kings","Queens","New York","Bronx","Richmond",
+                "Westchester","Rockland","Orange","Suffolk","Nassau",
+                "Putnam","Dutchess")
+
+NJNYCCounties <- c("Bergen","Passaic","Sussex","Union","Ocean","Hudson",
+                   "Monmouth","Middlesex","Somerset","Hunterdon","Morris","Essex")
+
+PANYCCounties <- c("Pike")
+
+
+VADCCounties <- c("Alexandria City", "Arlington", "Clarke", "Culpeper", "Fairfax County", "Fairfax City", 
+                  "Falls Church City", "Fauquier", "Fredericksburg City", 
+                  "Loudoun", "Manassas City", "Manassas Park City", "Prince William", 
+                  "Rappahannock", "Spotsylvania", "Stafford", "Warren")
+
+MDDCCounties <- c("Calvert","Prince George's","Montgomery","Frederick","Charles")
+
+WVDCCounties <- c("Jefferson")
+
+NewYorker <- map_dfr(Nycounties, 
+                     ~ get_acs(
+                       geography = "Block group", 
+                       state = "NY", 
+                       county = ., 
+                       variables = household_income)
+) 
+
+NJNYC <- map_dfr(NJNYCCounties, 
+                 ~ get_acs(
+                   geography = "Block group", 
+                   state = "NJ", 
+                   county = ., 
+                   variables = household_income)
+) 
+
+PANYC <- map_dfr(PANYCCounties, 
+                 ~ get_acs(
+                   geography = "Block group", 
+                   state = "PA", 
+                   county = ., 
+                   survey = "acs5",
+                   variables = household_income)
+) 
+
+NYC <- union(NewYorker, NJNYC,PANYC)
+
+DC <- get_acs(geography = "Tract", 
+              state = "DC", 
+              variables = "B25031_001", 
+              year = 2015)
+
+WV <- map_dfr(WVDCCounties, 
+              ~ get_acs(
+                geography = "Tract", 
+                state = "WV", 
+                county = ., 
+                variables = "B25031_001",
+                year = 2015)
+)           
+
+VA <- map_dfr(VADCCounties,
+              ~ get_acs(
+                geography = "Tract", 
+                state = "VA", 
+                county = ., 
+                variables = "B25031_001",
+                year = 2015)
+)    
+
+MD <- map_dfr(MDDCCounties,
+              ~ get_acs(
+                geography = "Tract", 
+                state = "MD", 
+                county = ., 
+                variables = "B25031_001",
+                year = 2015)
+)
+
+DCPSU <- rbind(DC,MD,VA,WV) 
+
+DCPSU <- DCPSU %>%
+  na.omit(estimate)
+
+#Create shapefile, then convert to simple sf
+DCGeom <- tracts(state = "DC")
+VAGeom <- tracts(state = "VA", county = VADCCounties)
+MDGeom <- tracts(state = "MD", county = MDDCCounties)
+WVGeom <- tracts(state = "WV", county = WVDCCounties)
+
+DCGrande <- raster::bind(DCGeom,VAGeom)
+DCOutside <- raster::bind(MDGeom,WVGeom)
+DCAll <- raster::bind(DCGrande,DCOutside)
+plot(DCAll)
+#convert to sf or none of this works
+DCAll2 <- st_as_sf(DCAll)
+
+DCMap <- DCAll2 %>%
+  left_join(DCPSU, by = c("GEOID" = "GEOID"))
+
+
+ggplot(DCMap) +
+  geom_sf(aes(fill = estimate)) +
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                        guide="colorbar",na.value="white") +
+  geom_sf(fill = "transparent", color = "gray20", size = 1.1,
+          data = .%>% group_by(STATEFP) %>% summarise()) +
+  coord_sf(xlim = c(-77.75,-76.25), ylim = c(38.5,39.5), expand = FALSE) +
+  labs(title = "DC Rent Gradient, 2015")
+
+
+v10 <- load_variables(2010, "acs5", cache = TRUE)
+v10
+
+v16 <- load_variables(2015, "acs5", cache = TRUE)
+v16
+
+USAStates <- readOGR("Y:/Dan/HousingPaper/ArcGIS/Shapefiles/States/tl_2017_us_state.shp")
+USAStates2 <- st_as_sf(USAStates)
+
+USAStates <- USAStates2 %>%
+  filter(NAME %in% c("Virginia","District of Columbia","West Virginia", "Maryland"))
+
+USAStates$NAME
