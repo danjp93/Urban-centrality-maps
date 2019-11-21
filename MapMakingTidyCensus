@@ -134,7 +134,7 @@ v10
 v16 <- load_variables(2015, "acs5", cache = TRUE)
 v16
 
-USAStates <- readOGR("Y:/Dan/HousingPaper/ArcGIS/Shapefiles/States/tl_2017_us_state.shp")
+USAStates <- readOGR("Location where file should go and be named, ending in .shp")
 USAStates2 <- st_as_sf(USAStates)
 
 USAStates <- USAStates2 %>%
