@@ -8,9 +8,9 @@ library(rgeos)
 library(ggplot2)
 library(ggfortify)
 
-api.key.install(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", file = "dan.rda")
+api.key.install(key = "put your own API key here", file = "dan.rda")
 
-census_api_key(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", install = TRUE, overwrite = TRUE)
+census_api_key(key = "put your own API key here", install = TRUE, overwrite = TRUE)
 
 geo.lookup(state="NY", county = "*", block.group = "*")
 
