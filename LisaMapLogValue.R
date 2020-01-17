@@ -122,7 +122,7 @@ quadrant[worklandmean3 > 0 & c_mi > 0] <- 4
 quadrant[locm_MAP[, 5] > signif] <- 0
 
 
-setwd("Y:/Dan/HousingPaper/DataSets/OrganizedFindings/MoranMaps")
+setwd("//documents")
 
 #Code used to design map, taken in part from http://rstudio-pubs-static.s3.amazonaws.com/4938_b5fc230d586c48b291627ff6ea484d2e.html
 brks <- c(0, 1, 2, 3, 4)
