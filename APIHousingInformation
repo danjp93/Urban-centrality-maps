@@ -1,0 +1,859 @@
+library(tidycensus)
+library(purrr)
+library(dplyr)
+library(tidyr)
+library(tigris)
+library(maptools)
+library(reshape)
+library(rgeos)
+library(ggplot2)
+library(sf)
+library(ggfortify)
+library(SparkR)
+
+# api.key.install(key = "your_key", file = "your_name.rda")
+
+census_api_key(key = "your_key", install = TRUE, overwrite = TRUE)
+
+geo.lookup(state="NY", county = "*", block.group = "*")
+
+household_income <- c("B19001_001","B19001_002","B19001_003","B19001_004","B19001_005","B19001_006"
+                      ,"B19001_007","B19001_008","B19001_009","B19001_010","B19001_011","B19001_012"
+                      ,"B19001_013","B19001_014","B19001_015","B19001_016","B19001_017")
+
+
+#NYCCounties
+
+Nycounties <- c("Kings","Queens","New York","Bronx","Richmond",
+                "Westchester","Rockland","Orange","Suffolk","Nassau",
+                "Putnam","Dutchess")
+
+NJNYCCounties <- c("Bergen","Passaic","Sussex","Union","Ocean","Hudson",
+                   "Monmouth","Middlesex","Somerset","Hunterdon","Morris","Essex")
+
+PANYCCounties <- c("Pike")
+
+
+
+#DCCounties
+
+VADCCounties <- c("Alexandria City", "Arlington", "Clarke", "Culpeper", "Fairfax County", "Fairfax City", 
+                  "Falls Church City", "Fauquier", "Fredericksburg City", 
+                  "Loudoun", "Manassas City", "Manassas Park City", "Prince William", 
+                  "Rappahannock", "Spotsylvania", "Stafford", "Warren")
+
+MDDCCounties <- c("Calvert","Prince George's","Montgomery","Frederick","Charles")
+
+WVDCCounties <- c("Jefferson")
+
+
+#ChiCounties
+
+ILCHCounties <- c("Cook","DeKalb","DuPage","Grundy","Kankakee",
+                "Kane","Kendall","McHenry","Will ","Lake")
+
+INCounties <- c("Jasper","Lake","Newton","Porter")
+
+WICHCounties <- c("Kenosha")
+
+
+#BosCounties
+
+NHCounties <- c("Stafford","Rockingham")
+
+MACounties <- c("Middlesex","Suffolk","Norfolk","Plymouth","Essex")
+
+
+#PHLCounties
+
+NJPHLCounties <- c("Burlington","Salem","Gloucester","Camden")
+
+PACounties <- c("Bucks","Montgomery","Philadelphia","Delaware","Chester")
+
+DECounties <- c("New Castle")
+
+MDPHLCounties <- c("Cecil")
+
+
+#Miami
+
+FLMICounties <- c("Palm Beach", "Broward", "Miami-Dade")
+
+
+#Dallas
+
+TXDACounties <- c("Wise","Denton","Collin ","Hunt","Rockwall",
+                  "Dallas","Parker","Tarrant","Kaufman","Hood",
+                  "Somervell","Johnson","Ellis")
+
+#Houston
+
+TXHOCounties <- c("Austin","Waller","Montgomery","Liberty",
+                  "Chambers","Harris ","Fort Bend", "Brazoria",
+                  "Galveston")
+
+#Phoenix
+
+AZCounties <- c("Maricopa","Pinal")
+
+
+#Las Vegas
+
+NVCounties <- c("Clark")
+
+
+#Los Angeles
+
+CALACounties <- c("Los Angeles", "Orange")
+
+
+
+#San Diego
+
+CASDCounties <- c("San Diego")
+
+
+
+#San Francisco
+
+CASFCounties <- c("San Mateo","Alameda", "Contra Costa",
+                  "San Francisco","Marin")
+
+
+#Atlanta
+
+GACounties <- c("Barrow","Bartow","Butts","Carroll","Cherokee",
+                "Clayton","Cobb","Coweta","Dawson","DeKalb","Douglas",
+                "Fayette","Forsyth","Fulton","Gwinnett","Hall",
+                "Haralson","Heard","Henry","Jasper","Lamar",
+                "Meriwether","Morgan","Newton","Paulding","Pickens",
+                "Pike","Rockdale","Spalding","Walton")
+
+#Detroit
+
+MICounties <- c("Lapeer","Livingston","Macomb","Oakland",
+                "St. Clair","Wayne")
+
+
+#Seattle
+
+WASECounties <- c("King","Pierce","Snohomish")
+
+
+#Minneapolis
+
+MNMICounties <- c("Hennepin","Ramsey","Dakota","Anoka",
+                  "Washington","Scott","Carver","Wright",
+                  "Sherburne","Chisago","Isanti","Le Sueur",
+                  "Mille Lacs","Sibley","Stearns","Benton",
+                  "Rice","Goodhue","McLeod")
+
+WIMICounties <- c("St. Croix","Pierce")
+
+
+
+#StLouis
+
+ILSTCounties <- c("Bond","Calhoun","Clinton","Jersey","Macoupin",
+                  "Madison","Monroe","St. Clair")
+
+MOCounties <- c("Franklin","Jefferson","Lincoln","St. Charles",
+                "St. Louis City", "St. Louis Co","Warren")
+
+
+#NYC
+
+NewYorker <- map_dfr(Nycounties, 
+                     ~ get_acs(
+                       geography = "Block group", 
+                       state = "NY", 
+                       county = ., 
+                       variables = household_income)
+) 
+
+NJNYC <- map_dfr(NJNYCCounties, 
+                 ~ get_acs(
+                   geography = "Block group", 
+                   state = "NJ", 
+                   county = ., 
+                   variables = household_income)
+) 
+
+PANYC <- map_dfr(PANYCCounties, 
+                 ~ get_acs(
+                   geography = "Block group", 
+                   state = "PA", 
+                   county = ., 
+                   survey = "acs5",
+                   variables = household_income)
+) 
+
+NYC <- rbind(NewYorker, NJNYC,PANYC)
+
+#reshape table with cast... need to drop moe
+
+NYC2 <- subset(NYC, select = -c(moe))
+
+NYC <- NYC2 %>% spread(variable,estimate)
+
+#DC
+
+DC <- get_acs(geography = "Block group", 
+              state = "DC", 
+              county = 001,
+              variables = "B19013_001", 
+              year = 2015)
+
+WV <- map_dfr(WVDCCounties, 
+              ~ get_acs(
+                geography = "Block Group", 
+                state = "WV", 
+                county = ., 
+                variables = "B19013_001",
+                year = 2015)
+)           
+
+VA <- map_dfr(VADCCounties,
+              ~ get_acs(
+                geography = "Block Group", 
+                state = "VA", 
+                county = ., 
+                variables = "B19013_001",
+                year = 2015)
+)    
+
+MD <- map_dfr(MDDCCounties,
+              ~ get_acs(
+                geography = "Block Group", 
+                state = "MD", 
+                county = ., 
+                variables = "B19013_001",
+                year = 2015)
+)
+
+DCPSU <- rbind(DC,MD,VA,WV) 
+
+DC2 <- subset(DC, select = -c(moe))
+
+DC <- DC2 %>% spread(variable,estimate)
+
+
+#CHI
+
+ILCHI <- map_dfr(ILCHCounties,
+                     ~ get_acs(
+                       geography = "Block Group", 
+                       state = "IL", 
+                       county = ., 
+                       variables = household_income,
+                       year = 2015))
+                 
+INCHI <- map_dfr(INCounties,
+                      ~ get_acs(
+                        geography = "Block Group", 
+                        state = "IN", 
+                        county = ., 
+                        variables = household_income,
+                        year = 2015))
+                      
+WICHI <- map_dfr(WICHCounties,
+                        ~ get_acs(
+                          geography = "Block Group", 
+                          state = "WI", 
+                          county = ., 
+                          variables = household_income,
+                          year = 2015))
+
+CHIPSU <- rbind(WICHI,ILCHI,INCHI) 
+
+CHI2 <- subset(CHIPSU, select = -c(moe))
+
+CHI <- CHI2 %>% spread(variable,estimate)
+
+
+#PHL
+
+NJPHL <- map_dfr(NJPHLCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "NJ", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+PAPHL <- map_dfr(PACounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "PA", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+DEPHL <- map_dfr(DECounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "DE", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+MDPHL <- map_dfr(MDPHLCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "MD", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+PHLPSU <- rbind(MDPHL,DEPHL,PAPHL,NJPHL) 
+
+PHL2 <- subset(PHLPSU, select = -c(moe))
+
+PHL <- PHL2 %>% spread(variable,estimate)
+
+
+
+#MIA
+
+FLMIA <- map_dfr(FLMICounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "FL", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+MIA2 <- subset(FLMIA, select = -c(moe))
+
+MIA <- MIA2 %>% spread(variable,estimate)
+
+#DAL
+
+TXDAL <- map_dfr(TXDACounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "TX", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+DAL2 <- subset(TXDAL, select = -c(moe))
+
+DAL <- DAL2 %>% spread(variable,estimate)
+
+
+#HOU
+
+TXHOU <- map_dfr(TXHOCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "TX", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+HOU2 <- subset(TXHOU, select = -c(moe))
+
+HOU <- HOU2 %>% spread(variable,estimate)
+
+
+#PHX
+
+PHXAZ <- map_dfr(AZCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "AZ", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+PHX2 <- subset(PHXAZ, select = -c(moe))
+
+PHX <- PHX2 %>% spread(variable,estimate)
+
+ 
+#LV
+
+NVLV <- map_dfr(NVCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "NV", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+LV2 <- subset(NVLV, select = -c(moe))
+
+LV <- LV2 %>% spread(variable,estimate)
+
+
+
+#SD
+
+CASD <- map_dfr(CASDCounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "CA", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+SD2 <- subset(CASD, select = -c(moe))
+
+SD <- SD2 %>% spread(variable,estimate)
+
+
+#SD
+
+CALA <- map_dfr(CALACounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "CA", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+LA2 <- subset(CALA, select = -c(moe))
+
+LA <- LA2 %>% spread(variable,estimate)
+
+
+#SF
+
+CASF <- map_dfr(CASFCounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "CA", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+SF2 <- subset(CASF, select = -c(moe))
+
+SF <- SF2 %>% spread(variable,estimate)
+
+
+#ATL
+
+GAATL <- map_dfr(GACounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "GA", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+ATL2 <- subset(GAATL, select = -c(moe))
+
+ATL <- ATL2 %>% spread(variable,estimate)
+
+#DT
+
+MIDT <- map_dfr(MICounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "MI", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+DT2 <- subset(MIDT, select = -c(moe))
+
+DT <- DT2 %>% spread(variable,estimate)
+
+#MIN
+
+MIMIN <- map_dfr(MNMICounties,
+                ~ get_acs(
+                  geography = "Block Group", 
+                  state = "MN", 
+                  county = ., 
+                  variables = household_income,
+                  year = 2015))
+
+WIMIN <- map_dfr(WIMICounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "WI", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+MINPSU <- rbind(MIMIN,WIMIN) 
+
+MIN2 <- subset(MINPSU, select = -c(moe))
+
+MIN <- MIN2 %>% spread(variable,estimate)
+
+
+#STL
+
+MOST <- map_dfr(ILSTCounties
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "IL", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+MOST <- map_dfr(MOCounties,
+                 ~ get_acs(
+                   geography = "Block Group", 
+                   state = "MO", 
+                   county = ., 
+                   variables = household_income,
+                   year = 2015))
+
+STLPSU <- rbind(MIMIN,MOST) 
+
+STL2 <- subset(STLPSU, select = -c(moe))
+
+STL <- STL2 %>% spread(variable,estimate)
+
+#Create shapefile, then convert to simple sf
+DCGeom <- block_groups(state = "DC")
+VAGeom <- block_groups(state = "VA", county = VADCCounties)
+MDGeom <- block_groups(state = "MD", county = MDDCCounties)
+WVGeom <- block_groups(state = "WV", county = WVDCCounties)
+
+DCGrande <- raster::bind(DCGeom,VAGeom)
+DCOutside <- raster::bind(MDGeom,WVGeom)
+DCAll <- raster::bind(DCGrande,DCOutside)
+plot(DCAll)
+#convert to sf or none of this works
+DCAll2 <- st_as_sf(DCAll)
+
+DCMap <- DCAll2 %>%
+  left_join(DCPSU, by = c("GEOID" = "GEOID"))
+
+
+ggplot(DCMap) +
+  geom_sf(aes(fill = estimate)) +
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                        guide="colorbar",na.value="white") +
+  geom_sf(fill = "transparent", color = "gray20", size = 1.1,
+          data = .%>% group_by(STATEFP) %>% summarise()) +
+  coord_sf(xlim = c(-77.75,-76.25), ylim = c(38.5,39.5), expand = FALSE) +
+  labs(title = "DC Rent Gradient, 2015")
+
+#trying to recreate the HA stuff I did thru SAS and R
+#local
+
+NYC$Group200 <- (NYC$B19001_017/NYC$B19001_001)
+NYC$Group150_200 <- (NYC$B19001_017 + NYC$B19001_016)/NYC$B19001_001;
+NYC$Group125_150 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015)/NYC$B19001_001;
+NYC$Group100_125 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014)/NYC$B19001_001;
+NYC$Group75_100 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013)/NYC$B19001_001;
+NYC$Group60_75 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012)/NYC$B19001_001;
+NYC$Group50_60 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011)/NYC$B19001_001;
+NYC$Group45_50 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010)/NYC$B19001_001;
+NYC$Group40_45 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009)/NYC$B19001_001;
+NYC$Group35_40 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008)/NYC$B19001_001;
+NYC$Group30_35 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007)/NYC$B19001_001;
+NYC$Group25_30 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007 + NYC$B19001_006)/NYC$B19001_001;
+NYC$Group20_25 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007 + NYC$B19001_006 + NYC$B19001_005)/NYC$B19001_001;
+NYC$Group15_20 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007 + NYC$B19001_006 + NYC$B19001_005 + NYC$B19001_004)/NYC$B19001_001;
+NYC$Group10_15 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007 + NYC$B19001_006 + NYC$B19001_005 + NYC$B19001_004 + NYC$B19001_003)/NYC$B19001_001;
+NYC$Group10 <- (NYC$B19001_017 + NYC$B19001_016 + NYC$B19001_015 + NYC$B19001_014 + NYC$B19001_013 + NYC$B19001_012 + NYC$B19001_011 + NYC$B19001_010 + NYC$B19001_009 + NYC$B19001_008 + NYC$B19001_007 + NYC$B19001_006 + NYC$B19001_005 + NYC$B19001_004 + NYC$B19001_003 + NYC$B19001_002)/NYC$B19001_001;
+NYC$ReverseGroup10 <- (NYC$B19001_002)/NYC$B19001_001;
+NYC$ReverseGroup10_15 <- (NYC$B19001_002 + NYC$B19001_003)/NYC$B19001_001;
+NYC$ReverseGroup15_20 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004)/NYC$B19001_001;
+NYC$ReverseGroup20_25 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005)/NYC$B19001_001;
+NYC$ReverseGroup25_30 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006)/NYC$B19001_001;
+NYC$ReverseGroup30_35 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007)/NYC$B19001_001;
+NYC$ReverseGroup35_40 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007 + NYC$B19001_008)/NYC$B19001_001;
+NYC$ReverseGroup40_45 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007 + NYC$B19001_008 + NYC$B19001_009)/NYC$B19001_001;
+NYC$ReverseGroup45_50 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007 + NYC$B19001_008 + NYC$B19001_009 + NYC$B19001_010)/NYC$B19001_001;
+NYC$ReverseGroup50_60 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007 + NYC$B19001_008 + NYC$B19001_009 + NYC$B19001_010 + NYC$B19001_011)/NYC$B19001_001;
+NYC$ReverseGroup60_75 <- (NYC$B19001_002 + NYC$B19001_003 + NYC$B19001_004 + NYC$B19001_005 + NYC$B19001_006 + NYC$B19001_007 + NYC$B19001_008 + NYC$B19001_009 + NYC$B19001_010 + NYC$B19001_011 + NYC$B19001_012)/NYC$B19001_001;
+
+NYC$LocalEnt200 <- NYC$B19001_001 * ((NYC$Group200)*log2(1/(NYC$Group200)) + 
+                                       (1-(NYC$Group200))*log2(1/(1-(NYC$Group200))))
+
+NYC$LocalEnt150_200 <- NYC$B19001_001 * ((NYC$Group150_200)*log2(1/(NYC$Group150_200)) + 
+                                           (1-(NYC$Group150_200))*log2(1/(1-(NYC$Group150_200))))
+
+NYC$LocalEnt125_150 <- NYC$B19001_001 * ((NYC$Group125_150)*log2(1/(NYC$Group125_150)) + 
+                                           (1-(NYC$Group125_150))*log2(1/(1-(NYC$Group125_150))))
+
+NYC$LocalEnt100_125 <- NYC$B19001_001 * ((NYC$Group100_125)*log2(1/(NYC$Group100_125)) + 
+                                           (1-(NYC$Group100_125))*log2(1/(1-(NYC$Group100_125))))
+
+NYC$LocalEnt75_100 <- NYC$B19001_001 * ((NYC$Group75_100)*log2(1/(NYC$Group75_100)) + 
+                                          (1-(NYC$Group75_100))*log2(1/(1-(NYC$Group75_100))))
+
+NYC$LocalEnt60_75 <- NYC$B19001_001 * ((NYC$Group60_75)*log2(1/(NYC$Group60_75)) + 
+                                         (1-(NYC$Group60_75))*log2(1/(1-(NYC$Group60_75))))
+
+NYC$LocalEnt50_60 <- NYC$B19001_001 * ((NYC$Group50_60)*log2(1/(NYC$Group50_60)) + 
+                                         (1-(NYC$Group50_60))*log2(1/(1-(NYC$Group50_60))))
+
+NYC$LocalEnt45_50 <- NYC$B19001_001 * ((NYC$Group45_50)*log2(1/(NYC$Group45_50)) + 
+                                         (1-(NYC$Group45_50))*log2(1/(1-(NYC$Group45_50))))
+
+NYC$LocalEnt40_45 <- NYC$B19001_001 * ((NYC$Group40_45)*log2(1/(NYC$Group40_45)) + 
+                                         (1-(NYC$Group40_45))*log2(1/(1-(NYC$Group40_45))))
+
+NYC$LocalEnt35_40 <- NYC$B19001_001 * ((NYC$Group35_40)*log2(1/(NYC$Group35_40)) + 
+                                         (1-(NYC$Group35_40))*log2(1/(1-(NYC$Group35_40))))
+
+NYC$LocalEnt30_35 <- NYC$B19001_001 * ((NYC$Group30_35)*log2(1/(NYC$Group30_35)) + 
+                                         (1-(NYC$Group30_35))*log2(1/(1-(NYC$Group30_35))))
+
+NYC$LocalEnt25_30 <- NYC$B19001_001 * ((NYC$Group25_30)*log2(1/(NYC$Group25_30)) + 
+                                         (1-(NYC$Group25_30))*log2(1/(1-(NYC$Group25_30))))
+
+NYC$LocalEnt20_25 <- NYC$B19001_001 * ((NYC$Group20_25)*log2(1/(NYC$Group20_25)) + 
+                                         (1-(NYC$Group20_25))*log2(1/(1-(NYC$Group20_25))))
+
+NYC$LocalEnt15_20 <- NYC$B19001_001 * ((NYC$Group15_20)*log2(1/(NYC$Group15_20)) + 
+                                         (1-(NYC$Group15_20))*log2(1/(1-(NYC$Group15_20))))
+
+NYC$LocalEnt10_15 <- NYC$B19001_001 * ((NYC$Group10_15)*log2(1/(NYC$Group10_15)) + 
+                                         (1-(NYC$Group10_15))*log2(1/(1-(NYC$Group10_15))))
+
+NYC$LocalEnt10 <- NYC$B19001_001 * ((NYC$Group10)*log2(1/(NYC$Group10)) + 
+                                      (1-(NYC$Group10))*log2(1/(1-(NYC$Group10))))
+
+NYC$ReverseLocalEnt10 <- NYC$B19001_001 * ((NYC$ReverseGroup10)*log2(1/(NYC$ReverseGroup10)) + 
+                                             (1-(NYC$ReverseGroup10))*log2(1/(1-(NYC$ReverseGroup10))))
+
+NYC$ReverseLocalEnt10_15 <- NYC$B19001_001 * ((NYC$ReverseGroup10_15)*log2(1/(NYC$ReverseGroup10_15)) + 
+                                                (1-(NYC$ReverseGroup10_15))*log2(1/(1-(NYC$ReverseGroup10_15))))
+
+NYC$ReverseLocalEnt15_20 <- NYC$B19001_001 * ((NYC$ReverseGroup15_20)*log2(1/(NYC$ReverseGroup15_20)) + 
+                                                (1-(NYC$ReverseGroup15_20))*log2(1/(1-(NYC$ReverseGroup15_20))))
+
+NYC$ReverseLocalEnt20_25 <- NYC$B19001_001 * ((NYC$ReverseGroup20_25)*log2(1/(NYC$ReverseGroup20_25)) + 
+                                                (1-(NYC$ReverseGroup20_25))*log2(1/(1-(NYC$ReverseGroup20_25))))
+
+NYC$ReverseLocalEnt25_30 <- NYC$B19001_001 * ((NYC$ReverseGroup25_30)*log2(1/(NYC$ReverseGroup25_30)) + 
+                                                (1-(NYC$ReverseGroup25_30))*log2(1/(1-(NYC$ReverseGroup25_30))))
+
+NYC$ReverseLocalEnt30_35 <- NYC$B19001_001 * ((NYC$ReverseGroup30_35)*log2(1/(NYC$ReverseGroup30_35)) + 
+                                                (1-(NYC$ReverseGroup30_35))*log2(1/(1-(NYC$ReverseGroup30_35))))
+
+
+#HA stuff Total
+
+
+NYCTOTALS <- NYC %>%
+  summarise(MSAB19001_001 = sum(NYC$B19001_001), MSAB19001_002 = sum(NYC$B19001_002), MSAB19001_003 = sum(NYC$B19001_003), MSAB19001_004 = sum(NYC$B19001_004),
+            MSAB19001_005 = sum(NYC$B19001_005), MSAB19001_006 = sum(NYC$B19001_006), MSAB19001_007 = sum(NYC$B19001_007),
+            MSAB19001_008 = sum(NYC$B19001_008), MSAB19001_009 = sum(NYC$B19001_009), MSAB19001_010 = sum(NYC$B19001_010),
+            MSAB19001_011 = sum(NYC$B19001_011), MSAB19001_012 = sum(NYC$B19001_012), MSAB19001_013 = sum(NYC$B19001_013),
+            MSAB19001_014 = sum(NYC$B19001_014), MSAB19001_015 = sum(NYC$B19001_015), MSAB19001_016 = sum(NYC$B19001_016),
+            MSAB19001_017 = sum(NYC$B19001_017))
+
+
+NYCTOTALS$MSAGroup200 <- (NYCTOTALS$MSAB19001_017/NYCTOTALS$MSAB19001_001)
+NYCTOTALS$MSAGroup150_200 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup125_150 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup100_125 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup75_100 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup60_75 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup50_60 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup45_50 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup40_45 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup35_40 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup30_35 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup25_30 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_006)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup20_25 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_005)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup15_20 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_004)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup10_15 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_003)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$MSAGroup10 <- (NYCTOTALS$MSAB19001_017 + NYCTOTALS$MSAB19001_016 + NYCTOTALS$MSAB19001_015 + NYCTOTALS$MSAB19001_014 + NYCTOTALS$MSAB19001_013 + NYCTOTALS$MSAB19001_012 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_002)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup10 <- (NYCTOTALS$MSAB19001_002)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup10_15 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup15_20 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup20_25 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup25_30 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup30_35 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup35_40 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_008)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup40_45 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_009)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup45_50 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_010)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup50_60 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_011)/NYCTOTALS$MSAB19001_001;
+NYCTOTALS$ReverseMSAGroup60_75 <- (NYCTOTALS$MSAB19001_002 + NYCTOTALS$MSAB19001_003 + NYCTOTALS$MSAB19001_004 + NYCTOTALS$MSAB19001_005 + NYCTOTALS$MSAB19001_006 + NYCTOTALS$MSAB19001_007 + NYCTOTALS$MSAB19001_008 + NYCTOTALS$MSAB19001_009 + NYCTOTALS$MSAB19001_010 + NYCTOTALS$MSAB19001_011 + NYCTOTALS$MSAB19001_012)/NYCTOTALS$MSAB19001_001;
+
+NYCTOTALS$TotalEnt200 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup200)*log2(1/(NYCTOTALS$MSAGroup200)) + 
+                                                      (1-(NYCTOTALS$MSAGroup200))*log2(1/(1-(NYCTOTALS$MSAGroup200))))
+
+NYCTOTALS$TotalEnt150_200 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup150_200)*log2(1/(NYCTOTALS$MSAGroup150_200)) + 
+                                                          (1-(NYCTOTALS$MSAGroup150_200))*log2(1/(1-(NYCTOTALS$MSAGroup150_200))))
+
+NYCTOTALS$TotalEnt125_150 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup125_150)*log2(1/(NYCTOTALS$MSAGroup125_150)) + 
+                                                          (1-(NYCTOTALS$MSAGroup125_150))*log2(1/(1-(NYCTOTALS$MSAGroup125_150))))
+
+NYCTOTALS$TotalEnt100_125 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup100_125)*log2(1/(NYCTOTALS$MSAGroup100_125)) + 
+                                                          (1-(NYCTOTALS$MSAGroup100_125))*log2(1/(1-(NYCTOTALS$MSAGroup100_125))))
+
+NYCTOTALS$TotalEnt75_100 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup75_100)*log2(1/(NYCTOTALS$MSAGroup75_100)) + 
+                                                         (1-(NYCTOTALS$MSAGroup75_100))*log2(1/(1-(NYCTOTALS$MSAGroup75_100))))
+
+NYCTOTALS$TotalEnt60_75 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup60_75)*log2(1/(NYCTOTALS$MSAGroup60_75)) + 
+                                                        (1-(NYCTOTALS$MSAGroup60_75))*log2(1/(1-(NYCTOTALS$MSAGroup60_75))))
+
+NYCTOTALS$TotalEnt50_60 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup50_60)*log2(1/(NYCTOTALS$MSAGroup50_60)) + 
+                                                        (1-(NYCTOTALS$MSAGroup50_60))*log2(1/(1-(NYCTOTALS$MSAGroup50_60))))
+
+NYCTOTALS$TotalEnt45_50 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup45_50)*log2(1/(NYCTOTALS$MSAGroup45_50)) + 
+                                                        (1-(NYCTOTALS$MSAGroup45_50))*log2(1/(1-(NYCTOTALS$MSAGroup45_50))))
+
+NYCTOTALS$TotalEnt40_45 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup40_45)*log2(1/(NYCTOTALS$MSAGroup40_45)) + 
+                                                        (1-(NYCTOTALS$MSAGroup40_45))*log2(1/(1-(NYCTOTALS$MSAGroup40_45))))
+
+NYCTOTALS$TotalEnt35_40 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup35_40)*log2(1/(NYCTOTALS$MSAGroup35_40)) + 
+                                                        (1-(NYCTOTALS$MSAGroup35_40))*log2(1/(1-(NYCTOTALS$MSAGroup35_40))))
+
+NYCTOTALS$TotalEnt30_35 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup30_35)*log2(1/(NYCTOTALS$MSAGroup30_35)) + 
+                                                        (1-(NYCTOTALS$MSAGroup30_35))*log2(1/(1-(NYCTOTALS$MSAGroup30_35))))
+
+NYCTOTALS$TotalEnt25_30 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup25_30)*log2(1/(NYCTOTALS$MSAGroup25_30)) + 
+                                                        (1-(NYCTOTALS$MSAGroup25_30))*log2(1/(1-(NYCTOTALS$MSAGroup25_30))))
+
+NYCTOTALS$TotalEnt20_25 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup20_25)*log2(1/(NYCTOTALS$MSAGroup20_25)) + 
+                                                        (1-(NYCTOTALS$MSAGroup20_25))*log2(1/(1-(NYCTOTALS$MSAGroup20_25))))
+
+NYCTOTALS$TotalEnt15_20 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup15_20)*log2(1/(NYCTOTALS$MSAGroup15_20)) + 
+                                                        (1-(NYCTOTALS$MSAGroup15_20))*log2(1/(1-(NYCTOTALS$MSAGroup15_20))))
+
+NYCTOTALS$TotalEnt10_15 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup10_15)*log2(1/(NYCTOTALS$MSAGroup10_15)) + 
+                                                        (1-(NYCTOTALS$MSAGroup10_15))*log2(1/(1-(NYCTOTALS$MSAGroup10_15))))
+
+NYCTOTALS$TotalEnt10 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$MSAGroup10)*log2(1/(NYCTOTALS$MSAGroup10)) + 
+                                                     (1-(NYCTOTALS$MSAGroup10))*log2(1/(1-(NYCTOTALS$MSAGroup10))))
+
+NYCTOTALS$ReverseTotalEnt10 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup10)*log2(1/(NYCTOTALS$ReverseMSAGroup10)) + 
+                                                            (1-(NYCTOTALS$ReverseMSAGroup10))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup10))))
+
+NYCTOTALS$ReverseTotalEnt10_15 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup10_15)*log2(1/(NYCTOTALS$ReverseMSAGroup10_15)) + 
+                                                               (1-(NYCTOTALS$ReverseMSAGroup10_15))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup10_15))))
+
+NYCTOTALS$ReverseTotalEnt15_20 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup15_20)*log2(1/(NYCTOTALS$ReverseMSAGroup15_20)) + 
+                                                               (1-(NYCTOTALS$ReverseMSAGroup15_20))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup15_20))))
+
+NYCTOTALS$ReverseTotalEnt20_25 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup20_25)*log2(1/(NYCTOTALS$ReverseMSAGroup20_25)) + 
+                                                               (1-(NYCTOTALS$ReverseMSAGroup20_25))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup20_25))))
+
+NYCTOTALS$ReverseTotalEnt25_30 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup25_30)*log2(1/(NYCTOTALS$ReverseMSAGroup25_30)) + 
+                                                               (1-(NYCTOTALS$ReverseMSAGroup25_30))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup25_30))))
+
+NYCTOTALS$ReverseTotalEnt30_35 <- NYCTOTALS$MSAB19001_001 * ((NYCTOTALS$ReverseMSAGroup30_35)*log2(1/(NYCTOTALS$ReverseMSAGroup30_35)) + 
+                                                               (1-(NYCTOTALS$ReverseMSAGroup30_35))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup30_35))))
+
+#Entropy calculation
+NYCTOTALS$E200 <- ((NYCTOTALS$MSAGroup200)*log2(1/(NYCTOTALS$MSAGroup200)) + (1-(NYCTOTALS$MSAGroup200))*log2(1/(1-(NYCTOTALS$MSAGroup200))))
+NYCTOTALS$E150_200 <- ((NYCTOTALS$MSAGroup150_200)*log2(1/(NYCTOTALS$MSAGroup150_200)) + (1-(NYCTOTALS$MSAGroup150_200))*log2(1/(1-(NYCTOTALS$MSAGroup150_200))))
+NYCTOTALS$E125_150 <- ((NYCTOTALS$MSAGroup125_150)*log2(1/(NYCTOTALS$MSAGroup125_150)) + (1-(NYCTOTALS$MSAGroup125_150))*log2(1/(1-(NYCTOTALS$MSAGroup125_150))))
+NYCTOTALS$E100_125 <- ((NYCTOTALS$MSAGroup100_125)*log2(1/(NYCTOTALS$MSAGroup100_125)) + (1-(NYCTOTALS$MSAGroup100_125))*log2(1/(1-(NYCTOTALS$MSAGroup100_125))))
+NYCTOTALS$E75_100 <- ((NYCTOTALS$MSAGroup75_100)*log2(1/(NYCTOTALS$MSAGroup75_100)) + (1-(NYCTOTALS$MSAGroup75_100))*log2(1/(1-(NYCTOTALS$MSAGroup75_100))))
+NYCTOTALS$E60_75 <- ((NYCTOTALS$MSAGroup60_75)*log2(1/(NYCTOTALS$MSAGroup60_75)) + (1-(NYCTOTALS$MSAGroup60_75))*log2(1/(1-(NYCTOTALS$MSAGroup60_75))))
+NYCTOTALS$E50_60 <- ((NYCTOTALS$MSAGroup50_60)*log2(1/(NYCTOTALS$MSAGroup50_60)) + (1-(NYCTOTALS$MSAGroup50_60))*log2(1/(1-(NYCTOTALS$MSAGroup50_60))))
+NYCTOTALS$E50_60 <- ((NYCTOTALS$MSAGroup50_60)*log2(1/(NYCTOTALS$MSAGroup50_60)) + (1-(NYCTOTALS$MSAGroup50_60))*log2(1/(1-(NYCTOTALS$MSAGroup50_60))))
+NYCTOTALS$E45_50 <- ((NYCTOTALS$MSAGroup45_50)*log2(1/(NYCTOTALS$MSAGroup45_50)) + (1-(NYCTOTALS$MSAGroup45_50))*log2(1/(1-(NYCTOTALS$MSAGroup45_50))))
+NYCTOTALS$E40_45 <- ((NYCTOTALS$MSAGroup40_45)*log2(1/(NYCTOTALS$MSAGroup40_45)) + (1-(NYCTOTALS$MSAGroup40_45))*log2(1/(1-(NYCTOTALS$MSAGroup40_45))))
+NYCTOTALS$E35_40 <- ((NYCTOTALS$MSAGroup35_40)*log2(1/(NYCTOTALS$MSAGroup35_40)) + (1-(NYCTOTALS$MSAGroup35_40))*log2(1/(1-(NYCTOTALS$MSAGroup35_40))))
+NYCTOTALS$E30_35 <- ((NYCTOTALS$MSAGroup30_35)*log2(1/(NYCTOTALS$MSAGroup30_35)) + (1-(NYCTOTALS$MSAGroup30_35))*log2(1/(1-(NYCTOTALS$MSAGroup30_35))))
+NYCTOTALS$E25_30 <- ((NYCTOTALS$MSAGroup25_30)*log2(1/(NYCTOTALS$MSAGroup25_30)) + (1-(NYCTOTALS$MSAGroup25_30))*log2(1/(1-(NYCTOTALS$MSAGroup25_30))))
+NYCTOTALS$E20_25 <- ((NYCTOTALS$MSAGroup20_25)*log2(1/(NYCTOTALS$MSAGroup20_25)) + (1-(NYCTOTALS$MSAGroup20_25))*log2(1/(1-(NYCTOTALS$MSAGroup20_25))))
+NYCTOTALS$E15_20 <- ((NYCTOTALS$MSAGroup15_20)*log2(1/(NYCTOTALS$MSAGroup15_20)) + (1-(NYCTOTALS$MSAGroup15_20))*log2(1/(1-(NYCTOTALS$MSAGroup15_20))))
+NYCTOTALS$E10_15 <- ((NYCTOTALS$MSAGroup10_15)*log2(1/(NYCTOTALS$MSAGroup10_15)) + (1-(NYCTOTALS$MSAGroup10_15))*log2(1/(1-(NYCTOTALS$MSAGroup10_15))))
+NYCTOTALS$E10 <- ((NYCTOTALS$MSAGroup10)*log2(1/(NYCTOTALS$MSAGroup10)) + (1-(NYCTOTALS$MSAGroup10))*log2(1/(1-(NYCTOTALS$MSAGroup10))))
+NYCTOTALS$ReverseE10 <- ((NYCTOTALS$ReverseMSAGroup10)*log2(1/(NYCTOTALS$ReverseMSAGroup10)) + (1-(NYCTOTALS$ReverseMSAGroup10))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup10))))
+NYCTOTALS$ReverseE10_15 <- ((NYCTOTALS$ReverseMSAGroup10_15)*log2(1/(NYCTOTALS$ReverseMSAGroup10_15)) + (1-(NYCTOTALS$ReverseMSAGroup10_15))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup10_15))))
+NYCTOTALS$ReverseE15_20 <- ((NYCTOTALS$ReverseMSAGroup15_20)*log2(1/(NYCTOTALS$ReverseMSAGroup15_20)) + (1-(NYCTOTALS$ReverseMSAGroup15_20))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup15_20))))
+NYCTOTALS$ReverseE20_25 <- ((NYCTOTALS$ReverseMSAGroup20_25)*log2(1/(NYCTOTALS$ReverseMSAGroup20_25)) + (1-(NYCTOTALS$ReverseMSAGroup20_25))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup20_25))))
+NYCTOTALS$ReverseE25_30 <- ((NYCTOTALS$ReverseMSAGroup25_30)*log2(1/(NYCTOTALS$ReverseMSAGroup25_30)) + (1-(NYCTOTALS$ReverseMSAGroup25_30))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup25_30))))
+NYCTOTALS$ReverseE30_35 <- ((NYCTOTALS$ReverseMSAGroup30_35)*log2(1/(NYCTOTALS$ReverseMSAGroup30_35)) + (1-(NYCTOTALS$ReverseMSAGroup30_35))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup30_35))))
+NYCTOTALS$ReverseE35_40 <- ((NYCTOTALS$ReverseMSAGroup35_40)*log2(1/(NYCTOTALS$ReverseMSAGroup35_40)) + (1-(NYCTOTALS$ReverseMSAGroup35_40))*log2(1/(1-(NYCTOTALS$ReverseMSAGroup35_40))))
+
+
+NYC$Section200 <- NYC$LocalEnt200 / NYCTOTALS$TotalEnt200
+NYC$Section150_200 <- NYC$LocalEnt150_200 / NYCTOTALS$TotalEnt150_200
+NYC$Section125_150 <- NYC$LocalEnt125_150 / NYCTOTALS$TotalEnt125_150
+NYC$Section100_125 <- NYC$LocalEnt100_125 / NYCTOTALS$TotalEnt100_125
+NYC$Section75_100 <- NYC$LocalEnt75_100 / NYCTOTALS$TotalEnt75_100
+NYC$Section60_75 <- NYC$LocalEnt60_75 / NYCTOTALS$TotalEnt60_75
+NYC$Section50_60 <- NYC$LocalEnt50_60 / NYCTOTALS$TotalEnt50_60
+NYC$Section45_50 <- NYC$LocalEnt45_50 / NYCTOTALS$TotalEnt45_50
+NYC$Section40_45 <- NYC$LocalEnt40_45 / NYCTOTALS$TotalEnt40_45
+NYC$Section35_40 <- NYC$LocalEnt35_40 / NYCTOTALS$TotalEnt35_40
+NYC$Section30_35 <- NYC$LocalEnt30_35 / NYCTOTALS$TotalEnt30_35
+NYC$Section25_30 <- NYC$LocalEnt25_30 / NYCTOTALS$TotalEnt25_30
+NYC$Section20_25 <- NYC$LocalEnt20_25 / NYCTOTALS$TotalEnt20_25
+NYC$Section15_20 <- NYC$LocalEnt15_20 / NYCTOTALS$TotalEnt15_20
+NYC$Section10_15 <- NYC$LocalEnt10_15 / NYCTOTALS$TotalEnt10_15
+NYC$Section10 <- NYC$LocalEnt10 / NYCTOTALS$TotalEnt10
+NYC$ReverseSection10 <- NYC$ReverseLocalEnt10 / NYCTOTALS$ReverseTotalEnt10
+NYC$ReverseSection10_15 <- NYC$ReverseLocalEnt10_15 / NYCTOTALS$ReverseTotalEnt10_15
+NYC$ReverseSection15_20 <- NYC$ReverseLocalEnt15_20 / NYCTOTALS$ReverseTotalEnt15_20
+NYC$ReverseSection20_25 <- NYC$ReverseLocalEnt20_25 / NYCTOTALS$ReverseTotalEnt20_25
+NYC$ReverseSection25_30 <- NYC$ReverseLocalEnt25_30 / NYCTOTALS$ReverseTotalEnt25_30
+
+#You cannot sum with NaN's, they need to be replaced with 0's
+NYC[is.na(NYC)] <- 0
+
+NYCTOTALS$Percent200 <- 1 - sum(NYC$Section200)
+NYCTOTALS$Percent150_200 <- 1 - sum(NYC$Section150_200)
+NYCTOTALS$Percent125_150 <- 1 - sum(NYC$Section125_150)
+NYCTOTALS$Percent100_125 <- 1 - sum(NYC$Section100_125)
+NYCTOTALS$Percent75_100 <- 1 - sum(NYC$Section75_100)
+NYCTOTALS$Percent60_75 <- 1 - sum(NYC$Section60_75)
+NYCTOTALS$Percent50_60 <- 1 - sum(NYC$Section50_60)
+NYCTOTALS$Percent45_50 <- 1 - sum(NYC$Section45_50)
+NYCTOTALS$Percent40_45 <- 1 - sum(NYC$Section40_45)
+NYCTOTALS$Percent35_40 <- 1 - sum(NYC$Section35_40)
+NYCTOTALS$Percent30_35 <- 1 - sum(NYC$Section30_35)
+NYCTOTALS$Percent25_30 <- 1 - sum(NYC$Section25_30)
+NYCTOTALS$Percent20_25 <- 1 - sum(NYC$Section20_25)
+NYCTOTALS$Percent15_20 <- 1 - sum(NYC$Section15_20)
+NYCTOTALS$Percent10_15 <- 1 - sum(NYC$Section10_15)
+NYCTOTALS$Percent10 <- 1 - sum(NYC$Section10)
+NYCTOTALS$ReversePercent10 <- 1 - sum(NYC$ReverseSection10)
+NYCTOTALS$ReversePercent10_15 <- 1 - sum(NYC$ReverseSection10_15)
+NYCTOTALS$ReversePercent15_20 <- 1 - sum(NYC$ReverseSection15_20)
+NYCTOTALS$ReversePercent20_25 <- 1 - sum(NYC$ReverseSection20_25)
+NYCTOTALS$ReversePercent25_30 <- 1 - sum(NYC$ReverseSection25_30)
+
+
+NYCTOTALS$Weight200 <- NYCTOTALS$E200 * NYCTOTALS$Percent200
+NYCTOTALS$Weight150_200 <- (NYCTOTALS$E150_200 * NYCTOTALS$Percent150_200)
+NYCTOTALS$Weight125_150 <- (NYCTOTALS$E125_150 * NYCTOTALS$Percent125_150) 
+NYCTOTALS$Weight100_125 <- (NYCTOTALS$E100_125 * NYCTOTALS$Percent100_125) 
+NYCTOTALS$Weight75_100 <- (NYCTOTALS$E75_100 * NYCTOTALS$Percent75_100)
+NYCTOTALS$Weight60_75 <- (NYCTOTALS$E60_75 * NYCTOTALS$Percent60_75) 
+NYCTOTALS$Weight50_60 <- (NYCTOTALS$E50_60 * NYCTOTALS$Percent50_60) 
+NYCTOTALS$Weight45_50 <- (NYCTOTALS$E45_50 * NYCTOTALS$Percent45_50)
+NYCTOTALS$Weight40_45 <- (NYCTOTALS$E40_45 * NYCTOTALS$Percent40_45) 
+NYCTOTALS$Weight35_40 <- (NYCTOTALS$E35_40 * NYCTOTALS$Percent35_40) 
+NYCTOTALS$Weight30_35 <- (NYCTOTALS$E30_35 * NYCTOTALS$Percent30_35)
+NYCTOTALS$Weight25_30 <- (NYCTOTALS$E25_30 * NYCTOTALS$Percent25_30) 
+NYCTOTALS$Weight20_25 <- (NYCTOTALS$E20_25 * NYCTOTALS$Percent20_25)
+NYCTOTALS$Weight15_20 <- (NYCTOTALS$E15_20 * NYCTOTALS$Percent15_20) 
+NYCTOTALS$Weight10_15 <- (NYCTOTALS$E10_15 * NYCTOTALS$Percent10_15) 
+NYCTOTALS$Weight10 <- (NYCTOTALS$E10 * NYCTOTALS$Percent10) 
+NYCTOTALS$ReverseWeight10 <- (NYCTOTALS$ReverseE10 * NYCTOTALS$ReversePercent10)
+NYCTOTALS$ReverseWeight10_15 <- (NYCTOTALS$ReverseE10_15 * NYCTOTALS$ReversePercent10_15)
+NYCTOTALS$ReverseWeight15_20 <- (NYCTOTALS$ReverseE15_20 * NYCTOTALS$ReversePercent15_20)
+NYCTOTALS$ReverseWeight20_25 <- (NYCTOTALS$ReverseE20_25 * NYCTOTALS$ReversePercent20_25)
+NYCTOTALS$ReverseWeight25_30 <- (NYCTOTALS$ReverseE25_30 * NYCTOTALS$ReversePercent25_30)
+
+#HA statistic, omitting column 126 since NaN
+NYCTOTALS$HAPart <- rowMeans(NYCTOTALS[,111:125])
+NYCTOTALS$HA <- NYCTOTALS$HAPart * (2*log(2))
+
+#TO FIGURE OUT HA10, HA20, YOU NEED TO LOOK AT MSAGROUP TO FIGURE OUT PERCENTS
+NYCTOTALS$HAPartTop20 <- rowMeans(NYCTOTALS[,111:112])
+NYCTOTALS$HATop20 <- NYCTOTALS$HAPartTop10 * (2*log(2))
+
+NYCTOTALS$HAPartTop10 <- rowMeans(NYCTOTALS[,111])
+NYCTOTALS$HATop10 <- NYCTOTALS$HAPartTop10 * (2*log(2))
+
+
+#Looking up the ACS5year variables and names
+
+v10 <- load_variables(2010, "acs5", cache = TRUE)
+v10
+
+v16 <- load_variables(2015, "acs5", cache = TRUE)
+v16
+
