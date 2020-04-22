@@ -1,33 +1,45 @@
-library(acs)
 library(tidycensus)
 library(purrr)
 library(tigris)
 library(maptools)
 library(reshape)
-library(rgeos)
-library(ggplot2)
-library(sf)
-library(ggfortify)
 library(SparkR)
 library(tidyverse)
 library(directlabels)
 library(ggrepel)
 
-# api.key.install(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", file = "dan.rda")
+#Installing census key on your computer
 
-census_api_key(key = "7db33632c9972728c1025f3d097f4178aeec7ddf", install = TRUE, overwrite = TRUE)
+census_api_key(key = "your key", install = TRUE, overwrite = TRUE)
 
-geo.lookup(state="NY", county = "*", block.group = "*")
+#creating a list of relevant variable from ACS
 
 household_income <- c("B19001_001","B19001_002","B19001_003","B19001_004","B19001_005","B19001_006"
                       ,"B19001_007","B19001_008","B19001_009","B19001_010","B19001_011","B19001_012"
                       ,"B19001_013","B19001_014","B19001_015","B19001_016","B19001_017")
 
+transport <- c("B08006_001","B08006_003","B08006_004","B08006_009","B08006_010","B08006_011",
+               "B08006_012","B08006_013","B08006_014","B08006_015","B08006_016","B08006_017")
+
 commute <- c("B08012_001","B08012_002","B08012_003","B08012_004","B08012_005","B08012_006","B08012_007",
              "B08012_008","B08012_009","B08012_010","B08012_011","B08012_012","B08012_013")
 
+workers <- c("B08007_001")
 
-MinutesToWork <- ("B08012_001")
+#aggregating all ACS metric by year
+
+acs1718 <- c("B19113_001","B25018_001","B25064_001","B25077_001","B08007_001","B15003_001","B15003_022",
+           "B08301_001","B08301_010","B08301_003","B08134_001","B08134_002","B08134_003","B08134_004",
+           "B08134_005","B08134_006","B08134_007","B08134_008","B08134_009","B08134_010")
+
+acs1316 <- c("B19113_001","B25018_001","B25064_001","B25077_001","B08007_001","B15003_001","B15003_022",
+             "B08301_001","B08301_010","B08301_003","B08303_001","B08303_002","B08303_003","B08303_004",
+             "B08303_005","B08303_006","B08303_007","B08303_008","B08303_009","B08303_010","B08303_011",
+             "B08303_012","B08303_013")
+
+homeattributes <- c("B25018_001","B25035_001")
+
+#list all the counties in an MSA
 
 #NYCCounties
 
@@ -172,6 +184,7 @@ MOCounties <- c("Franklin","Jefferson","Lincoln","St. Charles",
 COCounties <- c("Adams","Arapahoe","Elbert","Broomfield","Boulder","Gilpin","Clear Creek",
            "Park","Jefferson","Douglas","Denver")
 
+#Begin pulling information from Census
 
 #NYC
 
@@ -180,7 +193,7 @@ NewYorker <- map_dfr(Nycounties,
                        geography = "Block group", 
                        state = "NY", 
                        county = ., 
-                       variables = household_income,
+                       variables = homeattributes,
                        year = 2018)
 ) 
 
@@ -189,7 +202,7 @@ NJNYC <- map_dfr(NJNYCCounties,
                    geography = "Block group", 
                    state = "NJ", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018)
 ) 
 
@@ -199,7 +212,7 @@ PANYC <- map_dfr(PANYCCounties,
                    state = "PA", 
                    county = ., 
                    survey = "acs5",
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018)
 ) 
 
@@ -218,7 +231,7 @@ NYC <- NYC2 %>% spread(variable,estimate)
 DC <- get_acs(geography = "Block group", 
               state = "DC", 
               county = 001,
-              variables = household_income, 
+              variables = homeattributes, 
               year = 2018)
 
 WV <- map_dfr(WVDCCounties, 
@@ -226,7 +239,7 @@ WV <- map_dfr(WVDCCounties,
                 geography = "Block Group", 
                 state = "WV", 
                 county = ., 
-                variables = household_income,
+                variables = homeattributes,
                 year = 2018)
 )           
 
@@ -235,7 +248,7 @@ VA <- map_dfr(VADCCounties,
                 geography = "Block Group", 
                 state = "VA", 
                 county = ., 
-                variables = household_income,
+                variables = homeattributes,
                 year = 2018)
 )    
 
@@ -244,7 +257,7 @@ MD <- map_dfr(MDDCCounties,
                 geography = "Block Group", 
                 state = "MD", 
                 county = ., 
-                variables = household_income,
+                variables = homeattributes,
                 year = 2018)
 )
 
@@ -264,7 +277,7 @@ ILCHI <- map_dfr(ILCHCounties,
                        geography = "Block Group", 
                        state = "IL", 
                        county = ., 
-                       variables = household_income,
+                       variables = homeattributes,
                        year = 2018))
                  
 INCHI <- map_dfr(INCounties,
@@ -272,7 +285,7 @@ INCHI <- map_dfr(INCounties,
                         geography = "Block Group", 
                         state = "IN", 
                         county = ., 
-                        variables = household_income,
+                        variables = homeattributes,
                         year = 2018))
                       
 WICHI <- map_dfr(WICHCounties,
@@ -280,7 +293,7 @@ WICHI <- map_dfr(WICHCounties,
                           geography = "Block Group", 
                           state = "WI", 
                           county = ., 
-                          variables = household_income,
+                          variables = homeattributes,
                           year = 2018))
 
 CHIPSU <- rbind(WICHI,ILCHI,INCHI)
@@ -299,7 +312,7 @@ NHBOS <- map_dfr(NHCounties,
                    geography = "Block Group", 
                    state = "NH", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 MABOS <- map_dfr(MACounties,
@@ -307,7 +320,7 @@ MABOS <- map_dfr(MACounties,
                    geography = "Block Group", 
                    state = "MA", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 BOSPSU <- rbind(MABOS,NHBOS) 
@@ -327,7 +340,7 @@ NJPHL <- map_dfr(NJPHLCounties,
                    geography = "Block Group", 
                    state = "NJ", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 PAPHL <- map_dfr(PACounties,
@@ -335,7 +348,7 @@ PAPHL <- map_dfr(PACounties,
                    geography = "Block Group", 
                    state = "PA", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 DEPHL <- map_dfr(DECounties,
@@ -343,7 +356,7 @@ DEPHL <- map_dfr(DECounties,
                    geography = "Block Group", 
                    state = "DE", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 MDPHL <- map_dfr(MDPHLCounties,
@@ -351,7 +364,7 @@ MDPHL <- map_dfr(MDPHLCounties,
                    geography = "Block Group", 
                    state = "MD", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 PHLPSU <- rbind(MDPHL,DEPHL,PAPHL,NJPHL)
@@ -371,7 +384,7 @@ FLMIA <- map_dfr(FLMICounties,
                    geography = "Block Group", 
                    state = "FL", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 FLMIA <- add_column(FLMIA, city = "MIA")
@@ -387,7 +400,7 @@ TXDAL <- map_dfr(TXDACounties,
                    geography = "Block Group", 
                    state = "TX", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 TXDAL <- add_column(TXDAL, city = "DAL")
@@ -404,7 +417,7 @@ TXHOU <- map_dfr(TXHOCounties,
                    geography = "Block Group", 
                    state = "TX", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 TXHOU <- add_column(TXHOU, city = "HOU")
@@ -421,7 +434,7 @@ PHXAZ <- map_dfr(AZCounties,
                    geography = "Block Group", 
                    state = "AZ", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 PHXAZ <- add_column(PHXAZ, city = "PHX")
@@ -438,7 +451,7 @@ NVLV <- map_dfr(NVCounties,
                    geography = "Block Group", 
                    state = "NV", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 NVLV <- add_column(NVLV, city = "LV")
@@ -453,10 +466,10 @@ LV <- LV2 %>% spread(variable,estimate)
 
 CASD <- map_dfr(CASDCounties,
                 ~ get_acs(
-                  geography = "Tract", 
+                  geography = "Block Group", 
                   state = "CA", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 CASD <- add_column(CASD, city = "SD")
@@ -473,7 +486,7 @@ CALA <- map_dfr(CALACounties,
                   geography = "Block Group", 
                   state = "CA", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 CALA <- add_column(CALA, city = "LA")
@@ -490,7 +503,7 @@ CASF <- map_dfr(CASFCounties,
                   geography = "Block Group", 
                   state = "CA", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 CASF <- add_column(CASF, city = "SF")
@@ -507,7 +520,7 @@ GAATL <- map_dfr(GACounties,
                   geography = "Block Group", 
                   state = "GA", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 GAATL <- add_column(GAATL, city = "ATL")
@@ -523,7 +536,7 @@ MIDT <- map_dfr(MICounties,
                   geography = "Block Group", 
                   state = "MI", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 MIDT <- add_column(MIDT, city = "DT")
@@ -539,7 +552,7 @@ WASEA <- map_dfr(WASECounties,
                   geography = "Block Group", 
                   state = "WA", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 WASEA <- add_column(WASEA, city = "SEA")
@@ -556,7 +569,7 @@ MIMIN <- map_dfr(MNMICounties,
                   geography = "Block Group", 
                   state = "MN", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 WIMIN <- map_dfr(WIMICounties,
@@ -564,7 +577,7 @@ WIMIN <- map_dfr(WIMICounties,
                    geography = "Block Group", 
                    state = "WI", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 MINPSU <- rbind(MIMIN,WIMIN) 
@@ -583,7 +596,7 @@ ILST <- map_dfr(ILSTCounties,
                    geography = "Block Group", 
                    state = "IL", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 MOST <- map_dfr(MOCounties,
@@ -591,7 +604,7 @@ MOST <- map_dfr(MOCounties,
                    geography = "Block Group", 
                    state = "MO", 
                    county = ., 
-                   variables = household_income,
+                   variables = homeattributes,
                    year = 2018))
 
 STLPSU <- rbind(ILST,MOST) 
@@ -610,7 +623,7 @@ CODEN <- map_dfr(COCounties,
                   geography = "Block Group", 
                   state = "CO", 
                   county = ., 
-                  variables = household_income,
+                  variables = homeattributes,
                   year = 2018))
 
 DEN <- add_column(CODEN, city = "DEN")
@@ -620,54 +633,27 @@ DEN2 <- subset(DEN, select = -c(moe))
 DEN <- DEN2 %>% spread(variable,estimate)
 
 
-#MergingAllCities
+#MergingAllCities, Do this for all ACS years. Run for 2013, then 2014 and so on.
 
-ALLCITIES <- rbind(STL,MIN,SEA,DT,ATL,SF,LA,SD,LV,PHX,HOU,
-                   DAL,MIA,PHL,BOS,CHI,DC,NYC,DEN)
+ALLCITIES <- rbind(ATL,BOS,CHI,DAL,DC,DEN,DT,HOU,LA,LV,MIA,
+                   MIN,NYC,PHL,PHX,SD,SEA,SF,STL)
 
 ALLCITIES$city <- as.factor(ALLCITIES$city)
 
-#Create shapefile, then convert to simple sf
-DCGeom <- block_groups(state = "DC")
-VAGeom <- block_groups(state = "VA", county = VADCCounties)
-MDGeom <- block_groups(state = "MD", county = MDDCCounties)
-WVGeom <- block_groups(state = "WV", county = WVDCCounties)
+ALLCITIES18 <- add_column(ALLCITIES, year = 2018)
 
-DCAll <- raster::bind(DCGeom,VAGeom,MDGeom,WVGeom)
-plot(DCAll)
-#convert to sf or none of this works
-DCAll2 <- st_as_sf(DCAll)
+ALLCITIES <- ALLCITIES %>%
+  inner_join(chungus, by="GEOID")
 
-DCMap <- DCAll2 %>%
-  left_join(DCPSU, by = c("GEOID" = "GEOID"))
+ALLCITIES <- rbind(ALLCITIES13,ALLCITIES14,ALLCITIES15,ALLCITIES16,ALLCITIES17,ALLCITIES18)
+ALLCITIES$GEOID <- as.numeric(ALLCITIES$GEOID)
 
-
-ggplot(DCMap) +
-  geom_sf(aes(fill = estimate)) +
-  scale_fill_continuous(low="thistle2", high="darkred", 
-                        guide="colorbar",na.value="white") +
-  geom_sf(fill = "transparent", color = "gray20", size = 1.1,
-          data = .%>% group_by(STATEFP) %>% summarise()) +
-  coord_sf(xlim = c(-77.75,-76.25), ylim = c(38.5,39.5), expand = FALSE) +
-  labs(title = "DC Rent Gradient, 2014")
-
+write.csv(ALLCITIES,"your location", row.names = TRUE)
 
 #Looking up the ACS5year variables and names
 
 v10 <- load_variables(2010, "acs5", cache = TRUE)
 v10
 
-v16 <- load_variables(2016, "acs5", cache = TRUE)
+v16 <- load_variables(2013, "acs5", cache = TRUE)
 v16
-
-
-
-
-#Not sure what this is below
-USAStates <- readOGR("Y:/Dan/HousingPaper/ArcGIS/Shapefiles/States/tl_2018_us_state.shp")
-USAStates2 <- st_as_sf(USAStates)
-
-USAStates <- USAStates2 %>%
-  filter(NAME %in% c("Virginia","District of Columbia","West Virginia", "Maryland"))
-
-USAStates$NAME
