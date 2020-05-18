@@ -1,3 +1,8 @@
+library(spdep)
+library(rgeos)
+library(geosphere)
+library(sp)
+library(sas7bdat)
 
 #Create shapefile, then convert to simple sf
 
