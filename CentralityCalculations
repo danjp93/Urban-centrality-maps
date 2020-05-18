@@ -1,0 +1,428 @@
+
+#Create shapefile, then convert to simple sf
+
+
+DCGeom <- block_groups(state = "DC")
+VAGeom <- block_groups(state = "VA", county = VADCCounties)
+MDGeom <- block_groups(state = "MD", county = MDDCCounties)
+WVGeom <- block_groups(state = "WV", county = WVDCCounties)
+
+MINMNGeom <- block_groups(state = "MN", county = MNMICounties)
+MINWIGeom <- block_groups(state = "WI", county = WIMICounties)
+
+STLMOGeom <- block_groups(state = "MO", county = MOCounties)
+STLILGeom <- block_groups(state = "IL", county = ILSTCounties)
+
+BOSMAGeom <- block_groups(state = "MA", county = MACounties)
+BOSNHGeom <- block_groups(state = "NH", county = NHCounties)
+
+PHLNJGeom <- block_groups(state = "NJ", county = NJPHLCounties)
+PHLPAGeom <- block_groups(state = "PA", county = PACounties)
+PHLMDGeom <- block_groups(state = "MD", county = MDPHLCounties)
+PHLDEGeom <- block_groups(state = "DE", county = DECounties)
+
+CHIILGeom <- block_groups(state = "IL", county = ILCHCounties)
+CHIINGeom <- block_groups(state = "IN", county = INCounties)
+CHIWIGeom <- block_groups(state = "WI", county = WICHCounties)
+
+NYCNYGeom <- block_groups(state = "NY", county = Nycounties)
+NYCNJGeom <- block_groups(state = "NJ", county = NJNYCCounties)
+NYCPAGeom <- block_groups(state = "PA", county = PANYCCounties)
+
+LVGeom <- block_groups(state = "NV", county = NVCounties)
+DTGeom <- block_groups(state = "MI", county = MICounties)
+MIAGeom <- block_groups(state = "FL", county = FLMICounties)
+HOUGeom <- block_groups(state = "TX", county = TXHOCounties)
+DALGeom <- block_groups(state = "TX", county = TXDACounties)
+PHXGeom <- block_groups(state = "AZ", county = AZCounties)
+DENGeom <- block_groups(state = "CO", county = COCounties)
+SEAGeom <- block_groups(state = "WA", county = WASECounties)
+SFGeom <- block_groups(state = "CA", county = CASFCounties)
+SDGeom <- block_groups(state = "CA", county = CASDCounties)
+LAGeom <- block_groups(state = "CA", county = CALACounties)
+ATLGeom <- block_groups(state = "GA", county = GACounties)
+
+
+ATLAll <- ATLGeom
+
+ATLAll@data = data.frame(ATLAll@data,ATL[match(ATLAll@data$GEOID, ATL$GEOID),])
+
+ATLAll2 <- ATLAll[(ATLAll$B08007_001>0),]
+
+ATLAll2$CalcWLR <- ATLAll2$B08007_001 / as.numeric(ATLAll2$ALAND)
+ATLAll2$CalcWLR <- as.double(log(ATLAll2$CalcWLR))
+
+ATLAll2 <- ATLAll2[is.finite(ATLAll2$CalcWLR),]
+
+ATLALL_m_nbq <- poly2nb(ATLAll2, queen=T)
+ATLAll_m_nbq_w <- nb2listw(ATLALL_m_nbq, style="W", zero.policy = TRUE)
+
+ATLmoransEmployDense <- moran.test(ATLAll2$CalcWLR, ATLAll_m_nbq_w, zero.policy = TRUE)
+ATLmoransEmployDense
+
+
+LAALL <- LAGeom
+
+LAALL@data = data.frame(LAALL@data,LA[match(LAALL@data$GEOID, LA$GEOID),])
+
+LAALL2 <- LAALL[(LAALL$B08007_001>0),]
+
+LAALL2$CalcWLR <- LAALL2$B08007_001 / as.numeric(LAALL2$ALAND)
+LAALL2$CalcWLR <- as.double(log(LAALL2$CalcWLR))
+
+LAALL2 <- LAALL2[is.finite(LAALL2$CalcWLR),]
+
+LAALL_m_nbq <- poly2nb(LAALL2, queen=T)
+LAALL_m_nbq_w <- nb2listw(LAALL_m_nbq, style="W", zero.policy = TRUE)
+
+LAmoransEmployDense <- moran.test(LAALL2$CalcWLR, LAALL_m_nbq_w, zero.policy = TRUE)
+LAmoransEmployDense
+
+
+SDALL <- SDGeom
+
+SDALL@data = data.frame(SDALL@data,SD[match(SDALL@data$GEOID, SD$GEOID),])
+
+SDALL2 <- SDALL[(SDALL$B08007_001>0),]
+
+SDALL2$CalcWLR <- SDALL2$B08007_001 / as.numeric(SDALL2$ALAND)
+SDALL2$CalcWLR <- as.double(log(SDALL2$CalcWLR))
+
+SDALL2 <- SDALL2[is.finite(SDALL2$CalcWLR),]
+
+SDALL_m_nbq <- poly2nb(SDALL2, queen=T)
+SDALL_m_nbq_w <- nb2listw(SDALL_m_nbq, style="W", zero.policy = TRUE)
+
+SDmoransEmployDense <- moran.test(SDALL2$CalcWLR, SDALL_m_nbq_w, zero.policy = TRUE)
+SDmoransEmployDense
+
+
+
+SFALL <- SFGeom
+
+SFALL@data = data.frame(SFALL@data,SF[match(SFALL@data$GEOID, SF$GEOID),])
+
+SFALL2 <- SFALL[(SFALL$B08007_001>0),]
+
+SFALL2$CalcWLR <- SFALL2$B08007_001 / as.numeric(SFALL2$ALAND)
+SFALL2$CalcWLR <- as.double(log(SFALL2$CalcWLR))
+
+SFALL2 <- SFALL2[is.finite(SFALL2$CalcWLR),]
+
+SFALL_m_nbq <- poly2nb(SFALL2, queen=T)
+SFALL_m_nbq_w <- nb2listw(SFALL_m_nbq, style="W", zero.policy = TRUE)
+
+SFmoransEmployDense <- moran.test(SFALL2$CalcWLR, SFALL_m_nbq_w, zero.policy = TRUE)
+SFmoransEmployDense
+
+
+SEAALL <- SEAGeom
+
+SEAALL@data = data.frame(SEAALL@data,SEA[match(SEAALL@data$GEOID, SEA$GEOID),])
+
+SEAALL2 <- SEAALL[(SEAALL$B08007_001>0),]
+
+SEAALL2$CalcWLR <- SEAALL2$B08007_001 / as.numeric(SEAALL2$ALAND)
+SEAALL2$CalcWLR <- as.double(log(SEAALL2$CalcWLR))
+
+SEAALL2 <- SEAALL2[is.finite(SEAALL2$CalcWLR),]
+
+SEAALL_m_nbq <- poly2nb(SEAALL2, queen=T)
+SEAALL_m_nbq_w <- nb2listw(SEAALL_m_nbq, style="W", zero.policy = TRUE)
+
+SEAmoransEmployDense <- moran.test(SEAALL2$CalcWLR, SEAALL_m_nbq_w, zero.policy = TRUE)
+SEAmoransEmployDense
+
+
+
+DENALL <- DENGeom
+
+DENALL@data = data.frame(DENALL@data,DEN[match(DENALL@data$GEOID, DEN$GEOID),])
+
+DENALL2 <- DENALL[(DENALL$B08007_001>0),]
+
+DENALL2$CalcWLR <- DENALL2$B08007_001 / as.numeric(DENALL2$ALAND)
+DENALL2$CalcWLR <- as.double(log(DENALL2$CalcWLR))
+
+DENALL2 <- DENALL2[is.finite(DENALL2$CalcWLR),]
+
+DENALL_m_nbq <- poly2nb(DENALL2, queen=T)
+DENALL_m_nbq_w <- nb2listw(DENALL_m_nbq, style="W", zero.policy = TRUE)
+
+DENmoransEmployDense <- moran.test(DENALL2$CalcWLR, DENALL_m_nbq_w, zero.policy = TRUE)
+DENmoransEmployDense
+
+
+PHXALL <- PHXGeom
+
+PHXALL@data = data.frame(PHXALL@data,PHX[match(PHXALL@data$GEOID, PHX$GEOID),])
+
+PHXALL2 <- PHXALL[(PHXALL$B08007_001>0),]
+
+PHXALL2$CalcWLR <- PHXALL2$B08007_001 / as.numeric(PHXALL2$ALAND)
+PHXALL2$CalcWLR <- as.double(log(PHXALL2$CalcWLR))
+
+PHXALL2 <- PHXALL2[is.finite(PHXALL2$CalcWLR),]
+
+PHXALL_m_nbq <- poly2nb(PHXALL2, queen=T)
+PHXALL_m_nbq_w <- nb2listw(PHXALL_m_nbq, style="W", zero.policy = TRUE)
+
+PHXmoransEmployDense <- moran.test(PHXALL2$CalcWLR, PHXALL_m_nbq_w, zero.policy = TRUE)
+PHXmoransEmployDense
+
+
+DALALL <- DALGeom
+
+DALALL@data = data.frame(DALALL@data,DAL[match(DALALL@data$GEOID, DAL$GEOID),])
+
+DALALL2 <- DALALL[(DALALL$B08007_001>0),]
+
+DALALL2$CalcWLR <- DALALL2$B08007_001 / as.numeric(DALALL2$ALAND)
+DALALL2$CalcWLR <- as.double(log(DALALL2$CalcWLR))
+
+DALALL2 <- DALALL2[is.finite(DALALL2$CalcWLR),]
+
+DALALL_m_nbq <- poly2nb(DALALL2, queen=T)
+DALALL_m_nbq_w <- nb2listw(DALALL_m_nbq, style="W", zero.policy = TRUE)
+
+DALmoransEmployDense <- moran.test(DALALL2$CalcWLR, DALALL_m_nbq_w, zero.policy = TRUE)
+DALmoransEmployDense
+
+
+
+HOUALL <- HOUGeom
+
+HOUALL@data = data.frame(HOUALL@data,HOU[match(HOUALL@data$GEOID, HOU$GEOID),])
+
+HOUALL2 <- HOUALL[(HOUALL$B08007_001>0),]
+
+HOUALL2$CalcWLR <- HOUALL2$B08007_001 / as.numeric(HOUALL2$ALAND)
+HOUALL2$CalcWLR <- as.double(log(HOUALL2$CalcWLR))
+
+HOUALL2 <- HOUALL2[is.finite(HOUALL2$CalcWLR),]
+
+HOUALL_m_nbq <- poly2nb(HOUALL2, queen=T)
+HOUALL_m_nbq_w <- nb2listw(HOUALL_m_nbq, style="W", zero.policy = TRUE)
+
+HOUmoransEmployDense <- moran.test(HOUALL2$CalcWLR, HOUALL_m_nbq_w, zero.policy = TRUE)
+HOUmoransEmployDense
+
+
+MIAALL <- MIAGeom
+
+MIAALL@data = data.frame(MIAALL@data,MIA[match(MIAALL@data$GEOID, MIA$GEOID),])
+
+MIAALL2 <- MIAALL[(MIAALL$B08007_001>0),]
+
+MIAALL2$CalcWLR <- MIAALL2$B08007_001 / as.numeric(MIAALL2$ALAND)
+MIAALL2$CalcWLR <- as.double(log(MIAALL2$CalcWLR))
+
+MIAALL2 <- MIAALL2[is.finite(MIAALL2$CalcWLR),]
+
+MIAALL_m_nbq <- poly2nb(MIAALL2, queen=T)
+MIAALL_m_nbq_w <- nb2listw(MIAALL_m_nbq, style="W", zero.policy = TRUE)
+
+MIAmoransEmployDense <- moran.test(MIAALL2$CalcWLR, MIAALL_m_nbq_w, zero.policy = TRUE)
+MIAmoransEmployDense
+
+
+
+DTALL <- DTGeom
+
+DTALL@data = data.frame(DTALL@data,DT[match(DTALL@data$GEOID, DT$GEOID),])
+
+DTALL2 <- DTALL[(DTALL$B08007_001>0),]
+
+DTALL2$CalcWLR <- DTALL2$B08007_001 / as.numeric(DTALL2$ALAND)
+DTALL2$CalcWLR <- as.double(log(DTALL2$CalcWLR))
+
+DTALL2 <- DTALL2[is.finite(DTALL2$CalcWLR),]
+
+DTALL_m_nbq <- poly2nb(DTALL2, queen=T)
+DTALL_m_nbq_w <- nb2listw(DTALL_m_nbq, style="W", zero.policy = TRUE)
+
+DTmoransEmployDense <- moran.test(DTALL2$CalcWLR, DTALL_m_nbq_w, zero.policy = TRUE)
+DTmoransEmployDense
+
+
+LVALL <- LVGeom
+
+LVALL@data = data.frame(LVALL@data,LV[match(LVALL@data$GEOID, LV$GEOID),])
+
+LVALL2 <- LVALL[(LVALL$B08007_001>0),]
+
+LVALL2$CalcWLR <- LVALL2$B08007_001 / as.numeric(LVALL2$ALAND)
+LVALL2$CalcWLR <- as.double(log(LVALL2$CalcWLR))
+
+LVALL2 <- LVALL2[is.finite(LVALL2$CalcWLR),]
+
+LVALL_m_nbq <- poly2nb(LVALL2, queen=T)
+LVALL_m_nbq_w <- nb2listw(LVALL_m_nbq, style="W", zero.policy = TRUE)
+
+LVmoransEmployDense <- moran.test(LVALL2$CalcWLR, LVALL_m_nbq_w, zero.policy = TRUE)
+LVmoransEmployDense
+
+
+#Multi State Cities
+
+NYCAll <- raster::bind(NYCNYGeom,NYCNJGeom,NYCPAGeom)
+
+NYCAll@data = data.frame(NYCAll@data,NYC[match(NYCAll@data$GEOID, NYC$GEOID),])
+
+NYCAll2 <- NYCAll[(NYCAll$B08007_001>0),]
+
+NYCAll2$CalcWLR <- NYCAll2$B08007_001 / as.numeric(NYCAll2$ALAND)
+NYCAll2$CalcWLR <- as.double(log(NYCAll2$CalcWLR))
+
+NYCAll2 <- NYCAll2[is.finite(NYCAll2$CalcWLR),]
+
+NYCAll_m_nbq <- poly2nb(NYCAll2, queen=T)
+NYCAll_m_nbq_w <- nb2listw(NYCAll_m_nbq, style="W", zero.policy = TRUE)
+
+NYCmoransEmployDense <- moran.test(NYCAll2$CalcWLR, NYCAll_m_nbq_w, zero.policy = TRUE)
+NYCmoransEmployDense
+
+
+CHIAll <- raster::bind(CHIILGeom,CHIINGeom,CHIWIGeom)
+
+CHIAll@data = data.frame(CHIAll@data,CHI[match(CHIAll@data$GEOID, CHI$GEOID),])
+
+CHIAll2 <- CHIAll[(CHIAll$B08007_001>0),]
+
+CHIAll2$CalcWLR <- CHIAll2$B08007_001 / as.numeric(CHIAll2$ALAND)
+CHIAll2$CalcWLR <- as.double(log(CHIAll2$CalcWLR))
+
+CHIAll2 <- CHIAll2[is.finite(CHIAll2$CalcWLR),]
+
+CHIAll_m_nbq <- poly2nb(CHIAll2, queen=T)
+CHIAll_m_nbq_w <- nb2listw(CHIAll_m_nbq, style="W", zero.policy = TRUE)
+
+CHImoransEmployDense <- moran.test(CHIAll2$CalcWLR, CHIAll_m_nbq_w, zero.policy = TRUE)
+CHImoransEmployDense
+
+
+PHLAll <- raster::bind(PHLNJGeom,PHLPAGeom,PHLMDGeom,PHLDEGeom)
+
+PHLAll@data = data.frame(PHLAll@data,PHL[match(PHLAll@data$GEOID, PHL$GEOID),])
+
+PHLAll2 <- PHLAll[(PHLAll$B08007_001>0),]
+
+PHLAll2$CalcWLR <- PHLAll2$B08007_001 / as.numeric(PHLAll2$ALAND)
+PHLAll2$CalcWLR <- as.double(log(PHLAll2$CalcWLR))
+
+PHLAll2 <- PHLAll2[is.finite(PHLAll2$CalcWLR),]
+
+PHLAll_m_nbq <- poly2nb(PHLAll2, queen=T)
+PHLAll_m_nbq_w <- nb2listw(PHLAll_m_nbq, style="W", zero.policy = TRUE)
+
+PHLmoransEmployDense <- moran.test(PHLAll2$CalcWLR, PHLAll_m_nbq_w, zero.policy = TRUE)
+PHLmoransEmployDense
+
+
+
+BOSAll <- raster::bind(BOSMAGeom,BOSNHGeom)
+
+BOSAll@data = data.frame(BOSAll@data,BOS[match(BOSAll@data$GEOID, BOS$GEOID),])
+
+BOSAll2 <- BOSAll[(BOSAll$B08007_001>0),]
+
+BOSAll2$CalcWLR <- BOSAll2$B08007_001 / as.numeric(BOSAll2$ALAND)
+BOSAll2$CalcWLR <- as.double(log(BOSAll2$CalcWLR))
+
+BOSAll2 <- BOSAll2[is.finite(BOSAll2$CalcWLR),]
+
+BOSAll_m_nbq <- poly2nb(BOSAll2, queen=T)
+BOSAll_m_nbq_w <- nb2listw(BOSAll_m_nbq, style="W", zero.policy = TRUE)
+
+BOSmoransEmployDense <- moran.test(BOSAll2$CalcWLR, BOSAll_m_nbq_w, zero.policy = TRUE)
+BOSmoransEmployDense
+
+
+
+STLAll <- raster::bind(STLMOGeom,STLILGeom)
+
+STLAll@data = data.frame(STLAll@data,STL[match(STLAll@data$GEOID, STL$GEOID),])
+
+STLAll2 <- STLAll[(STLAll$B08007_001>0),]
+
+STLAll2$CalcWLR <- STLAll2$B08007_001 / as.numeric(STLAll2$ALAND)
+STLAll2$CalcWLR <- as.double(log(STLAll2$CalcWLR))
+
+STLAll2 <- STLAll2[is.finite(STLAll2$CalcWLR),]
+
+STLAll_m_nbq <- poly2nb(STLAll2, queen=T)
+STLAll_m_nbq_w <- nb2listw(STLAll_m_nbq, style="W", zero.policy = TRUE)
+
+STLmoransEmployDense <- moran.test(STLAll2$CalcWLR, STLAll_m_nbq_w, zero.policy = TRUE)
+STLmoransEmployDense
+
+
+
+MINAll <- raster::bind(MINMNGeom,MINWIGeom)
+
+MINAll@data = data.frame(MINAll@data,MIN[match(MINAll@data$GEOID, MIN$GEOID),])
+
+MINAll2 <- MINAll[(MINAll$B08007_001>0),]
+
+MINAll2$CalcWLR <- MINAll2$B08007_001 / as.numeric(MINAll2$ALAND)
+MINAll2$CalcWLR <- as.double(log(MINAll2$CalcWLR))
+
+MINAll2 <- MINAll2[is.finite(MINAll2$CalcWLR),]
+
+MINAll_m_nbq <- poly2nb(MINAll2, queen=T)
+MINAll_m_nbq_w <- nb2listw(MINAll_m_nbq, style="W", zero.policy = TRUE)
+
+MINmoransEmployDense <- moran.test(MINAll2$CalcWLR, MINAll_m_nbq_w, zero.policy = TRUE)
+MINmoransEmployDense
+
+
+DCHalf1 <- raster::bind(DCGeom,VAGeom)
+DCHalf2 <- raster::bind(MDGeom,WVGeom)
+DCAll <- raster::bind(DCHalf1,DCHalf2)
+
+DCAll@data = data.frame(DCAll@data,DC[match(DCAll@data$GEOID, DC$GEOID),])
+
+DCAll2 <- DCAll[(DCAll$B08007_001>0),]
+
+DCAll2$CalcWLR <- DCAll2$B08007_001 / as.numeric(DCAll2$ALAND)
+DCAll2$CalcWLR2 <- as.double(log(DCAll2$CalcWLR))
+
+DCAll2 <- DCAll2[is.finite(DCAll2$CalcWLR),]
+
+DCAll_m_nbq <- poly2nb(DCAll2, queen=T)
+DCAll_m_nbq_w <- nb2listw(DCAll_m_nbq, style="W", zero.policy = TRUE)
+
+DCmoransEmployDense <- moran.test(DCAll2$CalcWLR, DCAll_m_nbq_w, zero.policy = TRUE)
+DCmoransEmployDense
+
+Centrality2013 <- rbind(
+  ATLmoransEmployDense[[3]],
+  BOSmoransEmployDense[[3]],
+  CHImoransEmployDense[[3]],
+  DALmoransEmployDense[[3]],
+  DCmoransEmployDense[[3]],
+  DENmoransEmployDense[[3]],
+  DTmoransEmployDense[[3]],
+  HOUmoransEmployDense[[3]],
+  LAmoransEmployDense[[3]],
+  LVmoransEmployDense[[3]],
+  MIAmoransEmployDense[[3]],
+  MINmoransEmployDense[[3]],
+  NYCmoransEmployDense[[3]],
+  PHLmoransEmployDense[[3]],
+  PHXmoransEmployDense[[3]],
+  SDmoransEmployDense[[3]],
+  SEAmoransEmployDense[[3]],
+  SFmoransEmployDense[[3]],
+  STLmoransEmployDense[[3]]
+)
+
+CityNames <- c("ATL","BOS","CHI","DAL","DC","DEN","DT","HOU","LA",
+"LV","MIA","MIN","NYC","PHL","PHX","SD","SEA","SF","STL")
+
+year <- c("2013")
+
+Centrality2013 <- cbind(Centrality2013,CityNames,year)
+
+Centrality <- rbind(Centrality2018,Centrality2017,Centrality2016,
+                    Centrality2015,Centrality2014,Centrality2013)
