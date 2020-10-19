@@ -1,3 +1,7 @@
+#For grabbing block group characteristics from ACS
+
+
+
 library(tidycensus)
 library(purrr)
 library(tigris)
