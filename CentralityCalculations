@@ -1,3 +1,7 @@
+#Using Local Moran's I to understand employment density
+
+#please reference this link and Daniel Pallotta in the footnotes if you use this
+
 library(spdep)
 library(rgeos)
 library(geosphere)
@@ -6,6 +10,7 @@ library(sas7bdat)
 
 #Create shapefile, then convert to simple sf
 
+#This command is reading in the counties I've listed in the housing file that are considered a part of each respective city's msa
 
 DCGeom <- block_groups(state = "DC")
 VAGeom <- block_groups(state = "VA", county = VADCCounties)
@@ -50,18 +55,27 @@ ATLGeom <- block_groups(state = "GA", county = GACounties)
 
 ATLAll <- ATLGeom
 
+#merge the shapefile to the dataframe from the other code
+
 ATLAll@data = data.frame(ATLAll@data,ATL[match(ATLAll@data$GEOID, ATL$GEOID),])
+
+#only select block groups with employees who work there
 
 ATLAll2 <- ATLAll[(ATLAll$B08007_001>0),]
 
+#employment density calculation (num of employees / land)
 ATLAll2$CalcWLR <- ATLAll2$B08007_001 / as.numeric(ATLAll2$ALAND)
 ATLAll2$CalcWLR <- as.double(log(ATLAll2$CalcWLR))
 
+
+#ensures that Calculated Worker Land Ratio is a real number
 ATLAll2 <- ATLAll2[is.finite(ATLAll2$CalcWLR),]
 
+#beginning moran's calculations. Queen neighbors mean that any block group neighboring a corner or a point is considered a neighbor
 ATLALL_m_nbq <- poly2nb(ATLAll2, queen=T)
 ATLAll_m_nbq_w <- nb2listw(ATLALL_m_nbq, style="W", zero.policy = TRUE)
 
+#this is the actual test
 ATLmoransEmployDense <- moran.test(ATLAll2$CalcWLR, ATLAll_m_nbq_w, zero.policy = TRUE)
 ATLmoransEmployDense
 
