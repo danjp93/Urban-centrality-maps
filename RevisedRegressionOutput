@@ -1,0 +1,156 @@
+library(tidyverse)
+library(stargazer)
+
+#Start at line 60
+
+ACS_13 <- read.csv("//location/RegressionOutputRent_Year13.doc")
+ACS_14 <- read.csv("//location/RegressionOutputRent_Year14.doc")
+ACS_15 <- read.csv("//location/RegressionOutputRent_Year15.doc")
+ACS_16 <- read.csv("//location/RegressionOutputRent_Year16.doc")
+ACS_17 <- read.csv("//location/RegressionOutputRent_Year17.doc")
+ACS_18 <- read.csv("//location/RegressionOutputRent_Year18.doc")
+
+write.csv(ACSPost,"//location/RegressionOutputRent_Year.doc", row.names = TRUE)
+
+ACS13_18 <- read.csv("//location/RegressionOutputRent_Year.doc")
+
+ACS_13 <- add_column(ACS_13, year = 2013)
+ACS_14 <- add_column(ACS_14, year = 2014)
+ACS_15 <- add_column(ACS_15, year = 2015)
+ACS_16 <- add_column(ACS_16, year = 2016)
+ACS_17 <- add_column(ACS_17, year = 2017)
+ACS_18 <- add_column(ACS_18, year = 2018)
+
+ACSPre <- rbind(ACS_13,ACS_14,ACS_15,ACS_16)
+
+ACSPre <- subset(ACSPre, select = -c(B08303_001,B08303_002,B08303_003,B08303_004,
+                                     B08303_005,B08303_006,B08303_007,B08303_008,B08303_009,B08303_010,B08303_011,
+                                     B08303_012,B08303_013))
+ACSPost <- rbind(ACS_17,ACS_18)
+
+ACSPost <- subset(ACSPost, select = -c(B08134_001,B08134_002,B08134_003,B08134_004,
+                                       B08134_005,B08134_006,B08134_007,B08134_008,B08134_009,B08134_010))
+
+ACSNew <- rbind(ACSPre,ACSPost)
+
+ACS13_18 <- subset(ACS13_18, select = c(B25035_001,GEOID,year))
+
+ACSNew <- ACS13_18 %>%
+  left_join(ACSNew, by=c("GEOID","year")) 
+
+ACSNew <- ACSNew %>%
+  mutate(logValue = log2(B25077_001), 
+         logRent = log2(B25064_001),
+         logBGMinutes = log2(minutes),
+         postbachelors = (B15003_022 / B15003_001),
+         medianRoomNumber = (B25018_001),
+         workerNumber = log2(B08007_001),
+         buildingAge = as.numeric(ifelse(year == 2018,2018 - B25035_001,
+                              ifelse(year == 2017,2017 - B25035_001,
+                                     ifelse(year == 2016, 2016 - B25035_001,
+                                            ifelse(year == 2015, 2015 - B25035_001,
+                                                   ifelse(year == 2014, 2014 - B25035_001,
+                                                          ifelse(year == 2013, 2013 - B25035_001, "NA"))))))))
+
+ACSNew <- ACSNew[(ACSNew$workerNumber>0),]
+ACSNew <- ACSNew[(ACSNew$minutes<60),]
+
+write.csv(ACSNew,"//location/RegressionOutputRent_Year.doc/FinalRegression.csv", row.names = TRUE)
+
+ACSNew <- read.csv("//location/RegressionOutputRent_Year.doc/FinalRegression.csv")
+
+ACSNew$minutesSq <- ACSNew$minutes * ACSNew$minutes
+
+ACSNew$minutesCu <- ACSNew$minutes * ACSNew$minutes * ACSNew$minutes
+
+ACSATL_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "ATL"))
+ACSBOS_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "BOS"))
+ACSCHI_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "CHI"))
+ACSDAL_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DAL"))
+ACSDC_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DC"))
+ACSDEN_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DEN"))
+ACSDT_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DT"))
+ACSHOU_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "HOU"))
+ACSLA_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LA"))
+ACSLV_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LV"))
+ACSMIA_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIA"))
+ACSMIN_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIN"))
+ACSNYC_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "NYC"))
+ACSPHL_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHL"))
+ACSPHX_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHX"))
+ACSSD_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SD"))
+ACSSEA_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SEA"))
+ACSSF_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SF"))
+ACSSTL_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "STL"))
+
+#ST. LOUIS IS MISSING, IDK where it was dropped
+
+stargazer(ACSATL_Value, ACSMIN_Value, ACSBOS_Value, ACSNYC_Value, ACSCHI_Value,
+          ACSPHL_Value, ACSDEN_Value, ACSSEA_Value, ACSHOU_Value, ACSSD_Value, ACSDAL_Value, ACSSF_Value, ACSPHX_Value,
+          ACSDT_Value, ACSLV_Value, ACSLA_Value, ACSMIA_Value, ACSDC_Value, 
+          type="html", font.size = "tiny", column.labels = c('Monocentric', 'Mixed', 'Polycentric'), column.separate = c(5,8,4), out="//location/RegressionOutputRent_Year.doc")
+
+
+# To figure out inflection point in regression, plug the beta for minutes (x) and minutesSq (x^2) into a graph
+
+
+
+ACSATL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "ATL"))
+ACSBOS_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "BOS"))
+ACSCHI_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "CHI"))
+ACSDAL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DAL"))
+ACSDC_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DC"))
+ACSDEN_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DEN"))
+ACSDT_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DT"))
+ACSHOU_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "HOU"))
+ACSLA_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LA"))
+ACSLV_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LV"))
+ACSMIA_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIA"))
+ACSMIN_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIN"))
+ACSNYC_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "NYC"))
+ACSPHL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHL"))
+ACSPHX_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHX"))
+ACSSD_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SD"))
+ACSSEA_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SEA"))
+ACSSF_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SF"))
+ACSSTL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "STL"))
+
+#ST. LOUIS IS MISSING, IDK where it was dropped
+
+stargazer(ACSATL_Value, ACSMIN_Value, ACSBOS_Value, ACSNYC_Value, ACSCHI_Value,
+          ACSPHL_Value, ACSDEN_Value, ACSSEA_Value, ACSHOU_Value, ACSSD_Value, ACSDAL_Value, ACSSF_Value, ACSPHX_Value,
+          ACSDT_Value, ACSLV_Value, ACSLA_Value, ACSMIA_Value, ACSDC_Value, 
+          type="html", font.size = "tiny", column.labels = c('Monocentric', 'Mixed', 'Polycentric'), column.separate = c(5,8,4), out="//location/RegressionOutputRent_Year.doc")
+
+
+
+
+
+
+
+
+ACSATL_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "ATL"))
+ACSBOS_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "BOS"))
+ACSCHI_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "CHI"))
+ACSDAL_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DAL"))
+ACSDC_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DC"))
+ACSDEN_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DEN"))
+ACSDT_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "DT"))
+ACSHOU_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "HOU"))
+ACSLA_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LA"))
+ACSLV_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "LV"))
+ACSMIA_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIA"))
+ACSMIN_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "MIN"))
+ACSNYC_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "NYC"))
+ACSPHL_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHL"))
+ACSPHX_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "PHX"))
+ACSSD_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SD"))
+ACSSEA_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SEA"))
+ACSSF_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SF"))
+ACSSTL_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "STL"))
+
+
+stargazer(ACSATL_Rent, ACSMIN_Rent, ACSBOS_Rent, ACSNYC_Rent, ACSCHI_Rent,
+          ACSPHL_Rent, ACSDEN_Rent, ACSSEA_Rent, ACSHOU_Rent, ACSSD_Rent, ACSDAL_Rent, ACSSF_Rent, ACSPHX_Rent,
+          ACSDT_Rent, ACSLV_Rent, ACSLA_Rent, ACSMIA_Rent, ACSDC_Rent, 
+          type="html", font.size = "tiny", column.labels = c('Monocentric', 'Mixed', 'Polycentric'), column.separate = c(5,8,4), out="//location/RegressionOutputRent_Year.doc")
