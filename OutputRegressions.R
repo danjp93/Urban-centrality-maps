@@ -1,4 +1,4 @@
-#code used to determine income quintiles by city to generate a HA statistic 
+#This is an outdated version of the code used to create lm regressions
 
 #packages used
 library(stargazer)
