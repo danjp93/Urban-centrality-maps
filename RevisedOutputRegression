@@ -3,6 +3,8 @@ library(stargazer)
 
 #Start at line 60
 
+#import collection of ACS regression datasets
+
 ACS_13 <- read.csv("//location/RegressionOutputRent_Year13.doc")
 ACS_14 <- read.csv("//location/RegressionOutputRent_Year14.doc")
 ACS_15 <- read.csv("//location/RegressionOutputRent_Year15.doc")
@@ -21,6 +23,8 @@ ACS_16 <- add_column(ACS_16, year = 2016)
 ACS_17 <- add_column(ACS_17, year = 2017)
 ACS_18 <- add_column(ACS_18, year = 2018)
 
+#splitting ACS years based on variable name changes. ACS13-16 and ACS 17-18
+
 ACSPre <- rbind(ACS_13,ACS_14,ACS_15,ACS_16)
 
 ACSPre <- subset(ACSPre, select = -c(B08303_001,B08303_002,B08303_003,B08303_004,
@@ -38,6 +42,8 @@ ACS13_18 <- subset(ACS13_18, select = c(B25035_001,GEOID,year))
 ACSNew <- ACS13_18 %>%
   left_join(ACSNew, by=c("GEOID","year")) 
 
+#creating new variables with compiled datasets
+
 ACSNew <- ACSNew %>%
   mutate(logValue = log2(B25077_001), 
          logRent = log2(B25064_001),
@@ -52,7 +58,10 @@ ACSNew <- ACSNew %>%
                                                    ifelse(year == 2014, 2014 - B25035_001,
                                                           ifelse(year == 2013, 2013 - B25035_001, "NA"))))))))
 
+# select blockgroups where number of workers is >0
 ACSNew <- ACSNew[(ACSNew$workerNumber>0),]
+
+# select blockgroups where commute time to CBD is less than 60min
 ACSNew <- ACSNew[(ACSNew$minutes<60),]
 
 write.csv(ACSNew,"//location/RegressionOutputRent_Year.doc/FinalRegression.csv", row.names = TRUE)
@@ -83,8 +92,6 @@ ACSSEA_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbach
 ACSSF_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SF"))
 ACSSTL_Value <- lm(logValue ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "STL"))
 
-#ST. LOUIS IS MISSING, IDK where it was dropped
-
 stargazer(ACSATL_Value, ACSMIN_Value, ACSBOS_Value, ACSNYC_Value, ACSCHI_Value,
           ACSPHL_Value, ACSDEN_Value, ACSSEA_Value, ACSHOU_Value, ACSSD_Value, ACSDAL_Value, ACSSF_Value, ACSPHX_Value,
           ACSDT_Value, ACSLV_Value, ACSLA_Value, ACSMIA_Value, ACSDC_Value, 
@@ -93,7 +100,7 @@ stargazer(ACSATL_Value, ACSMIN_Value, ACSBOS_Value, ACSNYC_Value, ACSCHI_Value,
 
 # To figure out inflection point in regression, plug the beta for minutes (x) and minutesSq (x^2) into a graph
 
-
+#testing regression against home balue
 
 ACSATL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "ATL"))
 ACSBOS_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "BOS"))
@@ -115,19 +122,13 @@ ACSSEA_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+pos
 ACSSF_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "SF"))
 ACSSTL_Value <- lm(logValue ~ minutes+minutesSq+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "STL"))
 
-#ST. LOUIS IS MISSING, IDK where it was dropped
-
 stargazer(ACSATL_Value, ACSMIN_Value, ACSBOS_Value, ACSNYC_Value, ACSCHI_Value,
           ACSPHL_Value, ACSDEN_Value, ACSSEA_Value, ACSHOU_Value, ACSSD_Value, ACSDAL_Value, ACSSF_Value, ACSPHX_Value,
           ACSDT_Value, ACSLV_Value, ACSLA_Value, ACSMIA_Value, ACSDC_Value, 
           type="html", font.size = "tiny", column.labels = c('Monocentric', 'Mixed', 'Polycentric'), column.separate = c(5,8,4), out="//location/RegressionOutputRent_Year.doc")
 
 
-
-
-
-
-
+#testing regression against rent
 
 ACSATL_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "ATL"))
 ACSBOS_Rent <- lm(logRent ~ logBGMinutes+buildingAge+medianRoomNumber+postbachelors+workerNumber+year+B01001_001+B01002_001, data = subset(ACSNew,city == "BOS"))
